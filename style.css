@@ -1,0 +1,103 @@
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f2f4f6;
+}
+
+/* MAIN CARD */
+.card{
+  max-width:900px;
+  margin:20px auto;
+  background:#ffffff;
+  padding:30px;
+  border-radius:14px;
+  box-sizing:border-box;
+}
+
+/* HEADINGS */
+h2,h3{
+  text-align:center;
+  margin:0 0 20px 0;
+}
+
+/* SECTION */
+.section{
+  margin-top:35px;
+}
+
+/* FORM GRID */
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+
+.form-grid.full{
+  grid-template-columns:1fr;
+}
+
+/* LABEL + INPUT */
+label{
+  font-size:14px;
+  margin-bottom:6px;
+  display:block;
+}
+
+input,select{
+  width:100%;
+  padding:12px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  font-size:15px;
+  box-sizing:border-box;
+}
+
+/* BUTTONS */
+button{
+  padding:14px;
+  border:none;
+  border-radius:10px;
+  background:#00796b;
+  color:#fff;
+  font-size:15px;
+  cursor:pointer;
+}
+
+button.edit{background:#546e7a}
+button.delete{background:#c62828}
+
+/* LIST ROWS (Subjects / Students) */
+.list-row{
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:10px;
+  align-items:center;
+  background:#f5f6f7;
+  padding:10px;
+  border-radius:8px;
+  margin-top:8px;
+}
+
+.list-row input{
+  width:100%;
+}
+
+/* MESSAGE */
+.msg{
+  font-size:13px;
+  color:green;
+  margin-top:6px;
+}
+
+/* HIDE */
+.hidden{display:none}
+
+/* MOBILE FIX */
+@media(max-width:700px){
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+  .list-row{
+    grid-template-columns:1fr;
+  }
+}

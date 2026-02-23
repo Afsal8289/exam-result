@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="UTF-8">
+<title>Madrasa Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+/* --- CSS STYLES --- */
+body{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f2f4f8; margin:0; overflow-x:hidden; }
+.container{ max-width:1100px; margin:auto; padding:15px; box-sizing:border-box; }
+.card{ background:#fff; border-radius:12px; padding:20px; margin-bottom:15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+h2,h3{ margin:0 0 15px; color: #333; }
+.row{ display:flex; gap:10px; flex-wrap:wrap; width:100%; margin-bottom: 10px; align-items: center;}
+.row > *{ flex:1 1 100%; min-width:0; box-sizing:border-box; }
+input,select{ padding:12px; border-radius:8px; border:1px solid #ddd; width:100%; box-sizing:border-box; outline:none;}
+input:focus, select:focus{ border-color: #007bff; }
+button{ padding:12px 15px; border:none; border-radius:8px; cursor:pointer; background:#007bff; color:#fff; width:100%; font-weight:bold; transition:0.2s; }
+button:hover{ opacity: 0.9; }
+button.danger{ background:#dc3545; } 
+button.success{ background:#28a745; } 
+button.warning{ background:#ffc107; color:#333; }
+button.del-all-btn { background: #8b0000; margin-top:5px; }
+.excel-btn { background: #198754; }
+.list{ margin-top:15px; }
+.item{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px; border-bottom:1px solid #eee; background: #fff;}
+.item:last-child{ border-bottom: none; }
+.action-btns { display:flex; gap: 8px; }
+button.icon-btn { width: 35px !important; height: 35px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px;}
+button.edit-btn { background: #ffc107; color: #333; }
+button.delete-btn { background: #ffdddd; color: #dc3545; }
+.subject-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-top: 10px; margin-bottom: 15px;}
+.subject-box { background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e0e0e0;}
+.subject-box label { font-size: 13px; color: #444; font-weight: bold; display: block; margin-bottom: 6px;}
+.subject-box input { padding: 8px; text-align: center; font-weight: bold;}
+#overlay {position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; flex-direction:column;}
+.summary-box { margin-top:15px; padding:15px; background:#e9ecef; border-radius:8px; font-size:15px; line-height: 1.6;}
+.header-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 12px; margin-bottom: 15px; }
+.header-top h2 { margin: 0; color: #007bff; font-size: 22px; word-break: break-word; }
+.logout-btn { background: #dc3545; padding: 6px 12px; font-size: 12px; border-radius: 5px; white-space: nowrap; height: fit-content; margin-left: 10px; width: auto; }
+.publish-box { background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #007bff; }
+.file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%;}
+.file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; }
+@media (min-width: 768px){ .row > *{ flex:1; } button{ width:auto; } button.del-all-btn { margin-top:0; } }
+</style>
+</head>
+
+<body>
+<div id="overlay">
+    <div>Processing... Please wait.</div>
+    <div id="loadingText" style="font-size:14px; margin-top:10px; color:#555;"></div>
+</div>
+<div class="container" id="mainContent">
+
+<div class="card">
+  <div class="header-top">
+      <h2 id="title">Madrasa Name</h2>
+      <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </div>
+  
+  <h3>1. Madrasa Settings</h3>
+  <div class="row">
+    <input id="mname" placeholder="Madrasa Name">
+    <input id="mloc" placeholder="Location (സ്ഥലം)">
+    <input id="passmark" type="number" placeholder="Global Pass Mark">
+  </div>
+  
+  <div class="row">
+    <button id="saveSettingsBtn" style="width: 100%; max-width: 200px;"><i class="fas fa-save"></i> Save Settings</button>
+  </div>
+
+  <div class="publish-box">
+      <p style="font-size: 14px; color: #444; margin-top: 0; margin-bottom: 10px; font-weight: 500;">
+        <i class="fas fa-info-circle" style="color:#007bff;"></i> Publish ചെയ്താൽ കുട്ടികൾക്ക് റിസൾട്ട് കാണാം. Lock ചെയ്താൽ കുട്ടികൾക്ക് 'Coming Soon' എന്ന് കാണിക്കും.
+      </p>
+      <button id="visibilityBtn" style="width: auto;">Loading...</button>
+  </div>
+</div>
+
+<div class="card">
+  <h3>2. Manage Classes & Divisions</h3>
+  <div class="row">
+    <input id="className" placeholder="Add New Class (Ex: Class 5 A)">
+    <button id="addClassBtn">Add Class</button>
+  </div>
+  <div class="list" id="classList"></div>
+</div>
+
+<div class="card">
+  <h3>3. Subjects</h3>
+  <div class="row">
+    <select id="subClass" class="dynamic-class-select"></select>
+    <input id="subName" placeholder="Subject Name">
+    <input id="subMax" type="number" placeholder="Max Marks (Optional)" style="max-width: 150px;">
+    <button id="addSubjectBtn">Add Subject</button>
+  </div>
+  <div class="list" id="subjectList"></div>
+</div>
+
+<div class="card">
+  <h3>4. Students</h3>
+  <div class="row">
+    <select id="stuClass" class="dynamic-class-select"></select>
+    <input id="reg" type="text" placeholder="Register No">
+    <input id="sname" placeholder="Student Name">
+    <button id="addStuBtn">Add</button> 
+  </div>
+  <div class="row" style="margin-top: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
+      <div class="file-upload-wrapper">
+          <button class="excel-btn"><i class="fas fa-file-excel"></i> Bulk Upload Students (Excel)</button>
+          <input type="file" id="studentsExcel" accept=".xlsx, .xls">
+      </div>
+      <button class="danger del-all-btn" id="delAllStuBtn">Delete All</button>
+  </div>
+  <small style="color: #666; display: block; margin-bottom: 10px;">* എക്സൽ അപ്‌ലോഡ് ചെയ്യുമ്പോൾ കോളങ്ങളുടെ പേര് 'RegNo', 'Name' എന്ന് തന്നെ നൽകുക.</small>
+  <div class="list" id="studentList"></div>
+</div>
+
+<div class="card">
+  <h3>5. Marks Entry</h3>
+  <div class="row">
+    <select id="markClass" class="dynamic-class-select"></select>
+    <select id="markReg"></select>
+    <button class="danger del-all-btn" id="delAllMarksBtn">Delete All Marks</button>
+  </div>
+  <strong id="markStuName" style="color: #007bff; display:block; margin-bottom:10px; font-size: 18px;"></strong> 
+  
+  <div id="markInputsContainer" style="display:none;"></div>
+  <div id="markListContainer" style="margin-top: 20px;"></div>
+  
+  <div style="margin-top: 25px; border-top: 1px dashed #ccc; padding-top: 15px;">
+      <h4 style="margin:0 0 10px;">Bulk Upload Marks (Excel)</h4>
+      <div class="file-upload-wrapper" style="max-width: 250px;">
+          <button class="excel-btn"><i class="fas fa-file-excel"></i> Upload Marks</button>
+          <input type="file" id="marksExcel" accept=".xlsx, .xls">
+      </div>
+      <small style="color: #666; display: block; margin-top: 5px;">* എക്സൽ ഫോർമാറ്റ്: ആദ്യത്തെ കോളം 'RegNo', ബാക്കിയുള്ള കോളങ്ങൾ സബ്ജക്ടിന്റെ അതേ പേരുകൾ ആയിരിക്കണം.</small>
+  </div>
+</div>
+
+<div class="card">
+  <h3>6. Attendance (Optional)</h3>
+  <div class="row">
+    <select id="attClass" class="dynamic-class-select"></select>
+    <button class="danger del-all-btn" id="delAllAttBtn">Delete All Attendance</button>
+  </div>
+  <div id="attInputsContainer" style="display:none;"></div>
+</div>
+
+<div class="card">
+  <h3>7. Auto Result & PDF Download</h3>
+  <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Calculate ranks before downloading the PDF.</p>
+  <div class="row">
+    <select id="resClass" class="dynamic-class-select"></select>
+    <button class="success" id="calcRankBtn">1. Calculate Rank & Grade</button>
+    <button id="downloadPdfBtn">2. Download PDF</button>
+  </div>
+</div>
+
+</div>
+
+<script type="module" src="admin.js"></script>
+
+</body>
+</html>

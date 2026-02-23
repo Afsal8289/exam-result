@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="google-adsense-account" content="ca-pub-8490206815383590">
+<title>Madrasa Exam Result</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+/* --- CSS STYLES --- */
+body{
+  margin:0;
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background:#f2f4f7;
+}
+.container{
+  max-width:900px;
+  margin:20px auto;
+  padding:0 15px;
+}
+.card{
+  background:#fff;
+  border-radius:18px;
+  padding:25px;
+  box-shadow:0 6px 20px rgba(0,0,0,.08);
+}
+.header{text-align:center}
+.header h2{margin:0; color: #007bff; font-size: 24px; word-break: break-word;}
+.header .location {color: #555; font-size: 16px; margin-top: 6px; font-weight: 500;}
+.header .badge {display: inline-block; margin-top: 15px; background: #e2e8f0; color: #475569; padding: 5px 15px; border-radius: 20px; font-size: 13px; font-weight: bold;}
+
+.hr{height:2px; background:#eee; margin:20px 0;}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px 20px;
+  font-size: 16px;
+}
+@media(max-width:640px){
+  .grid{grid-template-columns:1fr;}
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+th,td{
+  border:1px solid #ddd;
+  padding:12px 10px;
+  text-align: left;
+}
+th{background:#f8f9fa; color: #333;}
+td {font-weight: 500; color: #444;}
+
+/* Status Colors */
+.status-pass{color:#28a745; font-weight:bold;}
+.status-fail{color:#dc3545; font-weight:bold;}
+.status-promoted{color:#17a2b8; font-weight:bold;}
+
+.bottom-grid {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 20px;
+  border: 1px solid #eee;
+}
+
+.buttons{
+  margin-top:20px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+button{
+  padding:15px;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+  font-weight: bold;
+  cursor:pointer;
+  transition: 0.2s;
+}
+button:active { transform: scale(0.98); }
+.download{background:#00796b;color:#fff}
+.back{background:#607d8b;color:#fff}
+
+/* Coming Soon Screen */
+#comingSoonCard {
+  text-align: center;
+  padding: 50px 20px;
+}
+#comingSoonCard i {
+  font-size: 60px;
+  color: #ff9800;
+  margin-bottom: 20px;
+}
+#comingSoonCard h2 {
+  color: #333;
+  margin-bottom: 10px;
+}
+#comingSoonCard p {
+  color: #666;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Loader */
+#overlay {position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #333;}
+</style>
+</head>
+
+<body>
+
+<div id="overlay">Loading Result...</div>
+
+<div class="container">
+    
+    <div class="card" id="resultCard" style="display: none;">
+      <div class="header">
+        <h2 id="madName">Madrasa Exam Result</h2>
+        <div id="madLoc" class="location"></div> <div class="badge">Result Sheet</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="grid">
+        <div><b>Name:</b> <span id="sName" style="color:#007bff">-</span></div>
+        <div><b>Register No:</b> <span id="sReg">-</span></div>
+        <div><b>Class:</b> <span id="sClass">-</span></div>
+        <div><b>Attendance:</b> <span id="sAtt">-</span></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Marks</th>
+          </tr>
+        </thead>
+        <tbody id="marks"></tbody>
+      </table>
+
+      <div class="grid bottom-grid">
+        <div><b>Rank:</b> <span id="sRank" style="color:#007bff; font-weight:bold;">-</span></div>
+        <div><b>Grade:</b> <span id="sGrade" style="color:#6f42c1; font-weight:bold;">-</span></div>
+        <div><b>Total Marks:</b> <span id="sTotal">-</span></div>
+        <div><b>Status:</b> <span id="sStatus">-</span></div>
+      </div>
+    </div>
+    
+    <div class="card" id="comingSoonCard" style="display: none;">
+        <i class="fas fa-lock"></i>
+        <h2>Coming Soon!</h2>
+        <p>റിസൾട്ട് പബ്ലിഷ് ചെയ്തിട്ടില്ല. അഡ്മിൻ റിസൾട്ട് പബ്ലിഷ് ചെയ്ത ശേഷം ദയവായി വീണ്ടും പരിശോധിക്കുക.</p>
+    </div>
+
+    <div class="buttons" id="buttonsBox" style="display: none;">
+      <button class="download" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+      <button class="back" onclick="history.back()"><i class="fas fa-arrow-left"></i> Go Back</button>
+    </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyDyyTKs5JVvTScGO3vdfOJBX7DCjv-M8ZQ",
+  authDomain: "madrasa-exam-result.firebaseapp.com",
+  projectId: "madrasa-exam-result",
+  storageBucket: "madrasa-exam-result.firebasestorage.app",
+  messagingSenderId: "852087187745",
+  appId: "1:852087187745:web:657b0a8ffb23b44663b660"
+});
+
+const db = getFirestore(app);
+
+const params = new URLSearchParams(location.search);
+const mid = params.get("mid");
+const cls = params.get("class");
+const reg = params.get("reg");
+
+async function loadResult(){
+  if(!mid || !cls || !reg) {
+      alert("Invalid Result Link");
+      history.back();
+      return;
+  }
+
+  try {
+      // 1. Check Madrasa & Publish Status
+      const madSnap = await getDoc(doc(db, "madrasas", mid));
+      if(!madSnap.exists()){
+        alert("Invalid Madrasa ID");
+        history.back();
+        return;
+      }
+      
+      const madData = madSnap.data();
+      document.getElementById("madName").innerText = madData.name || "Madrasa Exam Result";
+      
+      // Set Location if available
+      if(madData.location) {
+          document.getElementById("madLoc").innerText = madData.location;
+      } else {
+          document.getElementById("madLoc").style.display = "none";
+      }
+
+      // If Locked (Coming Soon)
+      if(madData.isPublished === false) {
+          document.getElementById("overlay").style.display = "none";
+          document.getElementById("comingSoonCard").style.display = "block";
+          
+          // Show back button only
+          document.getElementById("buttonsBox").style.display = "flex";
+          document.querySelector(".download").style.display = "none"; 
+          return;
+      }
+
+      // 2. Fetch Student Details
+      const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",cls), where("reg","==",reg));
+      const stuSnap = await getDocs(stuQ);
+
+      if(stuSnap.empty){
+        alert("Result not found for this Register Number!");
+        history.back();
+        return;
+      }
+
+      const stu = stuSnap.docs[0].data();
+      document.getElementById("sName").innerText = stu.name;
+      document.getElementById("sReg").innerText = reg;
+      document.getElementById("sClass").innerText = stu.className || cls;
+      
+      document.getElementById("sRank").innerText = stu.rank || "-";
+      document.getElementById("sGrade").innerText = stu.grade || "-";
+      document.getElementById("sTotal").innerText = stu.totalMarks || "0";
+
+      // Status Colors
+      const statusEl = document.getElementById("sStatus");
+      let statusStr = stu.resultStatus || "-";
+      statusEl.innerText = statusStr;
+      
+      if(statusStr === "PASSED") statusEl.className = "status-pass";
+      else if(statusStr === "PROMOTED") statusEl.className = "status-promoted";
+      else statusEl.className = "status-fail";
+
+      // 3. Fetch Attendance
+      const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class","==",cls), where("reg","==",reg));
+      const attSnap = await getDocs(attQ);
+      document.getElementById("sAtt").innerText = attSnap.empty ? "-" : attSnap.docs[0].data().attendance;
+
+      // 4. Fetch Subjects (To maintain strict order)
+      const subQ = query(collection(db, "madrasas", mid, "subjects"), where("class","==",cls));
+      const subSnap = await getDocs(subQ);
+      let subjects = [];
+      subSnap.forEach(d => subjects.push(d.data()));
+      subjects.sort((a,b)=> (a.createdAt||0) - (b.createdAt||0)); // Sort by creation time
+
+      // 5. Fetch Marks
+      const markQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",cls), where("reg","==",reg));
+      const markSnap = await getDocs(markQ);
+      let marksMap = {};
+      markSnap.forEach(d => {
+          let m = d.data();
+          marksMap[m.subject] = m.mark;
+      });
+
+      // 6. Build HTML Table
+      const marksTbody = document.getElementById("marks");
+      marksTbody.innerHTML = "";
+      
+      subjects.forEach(s => {
+          let markVal = marksMap[s.subject] !== undefined ? marksMap[s.subject] : "-";
+          marksTbody.innerHTML += `
+            <tr>
+              <td>${s.subject}</td>
+              <td><b>${markVal}</b></td>
+            </tr>
+          `;
+      });
+
+      // Show Result
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("resultCard").style.display = "block";
+      document.getElementById("buttonsBox").style.display = "flex";
+
+  } catch (error) {
+      console.error("Error loading result:", error);
+      alert("Something went wrong! Please try again later.");
+      document.getElementById("overlay").style.display = "none";
+  }
+}
+
+loadResult();
+
+window.downloadPDF = function() {
+  const element = document.getElementById("resultCard");
+  const opt = {
+      margin:       10,
+      filename:     `Result_${reg}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
+}
+</script>
+
+</body>
+</html>
