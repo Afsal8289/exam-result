@@ -47,6 +47,44 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
 .publish-box { background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #007bff; }
 .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%;}
 .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; }
+
+/* --- TABS CSS --- */
+.tab-container {
+    display: flex;
+    overflow-x: auto;
+    background: #fff;
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    gap: 10px;
+    white-space: nowrap;
+}
+.tab-container::-webkit-scrollbar { display: none; } /* Hide scrollbar */
+.tab-btn {
+    background: #f0f2f5;
+    color: #444;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+}
+.tab-btn:hover { background: #e2e6ea; }
+.tab-btn.active {
+    background: #007bff;
+    color: #fff;
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @media (min-width: 768px){ .row > *{ flex:1; } button{ width:auto; } button.del-all-btn { margin-top:0; } }
 </style>
 </head>
@@ -56,114 +94,160 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
     <div>Processing... Please wait.</div>
     <div id="loadingText" style="font-size:14px; margin-top:10px; color:#555;"></div>
 </div>
+
 <div class="container" id="mainContent">
 
-<div class="card">
-  <div class="header-top">
-      <h2 id="title">Madrasa Name</h2>
-      <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-  </div>
-  
-  <h3>1. Madrasa Settings</h3>
-  <div class="row">
-    <input id="mname" placeholder="Madrasa Name">
-    <input id="mloc" placeholder="Location (സ്ഥലം)">
-    <input id="passmark" type="number" placeholder="Global Pass Mark">
-  </div>
-  
-  <div class="row">
-    <button id="saveSettingsBtn" style="width: 100%; max-width: 200px;"><i class="fas fa-save"></i> Save Settings</button>
-  </div>
+    <div class="card" style="margin-bottom: 10px; padding: 15px 20px;">
+        <div class="header-top" style="border:none; padding:0; margin:0;">
+            <h2 id="title">Madrasa Name</h2>
+            <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </div>
 
-  <div class="publish-box">
-      <p style="font-size: 14px; color: #444; margin-top: 0; margin-bottom: 10px; font-weight: 500;">
-        <i class="fas fa-info-circle" style="color:#007bff;"></i> Publish ചെയ്താൽ കുട്ടികൾക്ക് റിസൾട്ട് കാണാം. Lock ചെയ്താൽ കുട്ടികൾക്ക് 'Coming Soon' എന്ന് കാണിക്കും.
-      </p>
-      <button id="visibilityBtn" style="width: auto;">Loading...</button>
-  </div>
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="openTab(event, 'tab-settings')"><i class="fas fa-cog"></i> Settings</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-classes')"><i class="fas fa-chalkboard"></i> Classes</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-subjects')"><i class="fas fa-book"></i> Subjects</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-students')"><i class="fas fa-users"></i> Students</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-marks')"><i class="fas fa-edit"></i> Marks</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-attendance')"><i class="fas fa-calendar-check"></i> Attendance</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-result')"><i class="fas fa-file-pdf"></i> PDF & Result</button>
+    </div>
+
+    <div id="tab-settings" class="tab-content active">
+        <div class="card">
+          <h3>Madrasa Settings</h3>
+          <div class="row">
+            <input id="mname" placeholder="Madrasa Name">
+            <input id="mloc" placeholder="Location (സ്ഥലം)">
+            <input id="passmark" type="number" placeholder="Global Pass Mark">
+          </div>
+          <div class="row">
+            <button id="saveSettingsBtn" style="width: 100%; max-width: 200px;"><i class="fas fa-save"></i> Save Settings</button>
+          </div>
+          <div class="publish-box">
+              <p style="font-size: 14px; color: #444; margin-top: 0; margin-bottom: 10px; font-weight: 500;">
+                <i class="fas fa-info-circle" style="color:#007bff;"></i> Publish ചെയ്താൽ കുട്ടികൾക്ക് റിസൾട്ട് കാണാം. Lock ചെയ്താൽ കുട്ടികൾക്ക് 'Coming Soon' എന്ന് കാണിക്കും.
+              </p>
+              <button id="visibilityBtn" style="width: auto;">Loading...</button>
+          </div>
+        </div>
+    </div>
+
+    <div id="tab-classes" class="tab-content">
+        <div class="card">
+          <h3>Manage Classes & Divisions</h3>
+          <div class="row">
+            <input id="className" placeholder="Add New Class (Ex: Class 5 A)">
+            <button id="addClassBtn">Add Class</button>
+          </div>
+          <div class="list" id="classList"></div>
+        </div>
+    </div>
+
+    <div id="tab-subjects" class="tab-content">
+        <div class="card">
+          <h3>Subjects</h3>
+          <div class="row">
+            <select id="subClass" class="dynamic-class-select"></select>
+            <input id="subName" placeholder="Subject Name">
+            <input id="subMax" type="number" placeholder="Max Marks" style="max-width: 120px;">
+            <button id="addSubjectBtn">Add Subject</button>
+          </div>
+          <div class="list" id="subjectList"></div>
+        </div>
+    </div>
+
+    <div id="tab-students" class="tab-content">
+        <div class="card">
+          <h3>Students</h3>
+          <div class="row">
+            <select id="stuClass" class="dynamic-class-select"></select>
+            <input id="reg" type="text" placeholder="Register No">
+            <input id="sname" placeholder="Student Name">
+            <button id="addStuBtn">Add</button> 
+          </div>
+          <div class="row" style="margin-top: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
+              <div class="file-upload-wrapper">
+                  <button class="excel-btn"><i class="fas fa-file-excel"></i> Bulk Upload (Excel)</button>
+                  <input type="file" id="studentsExcel" accept=".xlsx, .xls">
+              </div>
+              <button class="danger del-all-btn" id="delAllStuBtn">Delete All</button>
+          </div>
+          <small style="color: #666; display: block; margin-bottom: 10px;">* എക്സൽ അപ്‌ലോഡ് ചെയ്യുമ്പോൾ കോളങ്ങളുടെ പേര് 'RegNo', 'Name' എന്ന് തന്നെ നൽകുക.</small>
+          <div class="list" id="studentList"></div>
+        </div>
+    </div>
+
+    <div id="tab-marks" class="tab-content">
+        <div class="card">
+          <h3>Marks Entry</h3>
+          <div class="row">
+            <select id="markClass" class="dynamic-class-select"></select>
+            <select id="markReg"></select>
+            <button class="danger del-all-btn" id="delAllMarksBtn">Delete All Marks</button>
+          </div>
+          <strong id="markStuName" style="color: #007bff; display:block; margin-bottom:10px; font-size: 18px;"></strong> 
+          
+          <div id="markInputsContainer" style="display:none;"></div>
+          <div id="markListContainer" style="margin-top: 20px;"></div>
+          
+          <div style="margin-top: 25px; border-top: 1px dashed #ccc; padding-top: 15px;">
+              <h4 style="margin:0 0 10px;">Bulk Upload Marks (Excel)</h4>
+              <div class="file-upload-wrapper" style="max-width: 250px;">
+                  <button class="excel-btn"><i class="fas fa-file-excel"></i> Upload Marks</button>
+                  <input type="file" id="marksExcel" accept=".xlsx, .xls">
+              </div>
+          </div>
+        </div>
+    </div>
+
+    <div id="tab-attendance" class="tab-content">
+        <div class="card">
+          <h3>Attendance (Optional)</h3>
+          <div class="row">
+            <select id="attClass" class="dynamic-class-select"></select>
+            <button class="danger del-all-btn" id="delAllAttBtn">Delete All Attendance</button>
+          </div>
+          <div id="attInputsContainer" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div id="tab-result" class="tab-content">
+        <div class="card">
+          <h3>Auto Result & PDF Download</h3>
+          <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Calculate ranks before downloading the PDF.</p>
+          <div class="row">
+            <select id="resClass" class="dynamic-class-select"></select>
+            <button class="success" id="calcRankBtn">1. Calculate Rank & Grade</button>
+            <button id="downloadPdfBtn">2. Download PDF</button>
+          </div>
+        </div>
+    </div>
+
 </div>
 
-<div class="card">
-  <h3>2. Manage Classes & Divisions</h3>
-  <div class="row">
-    <input id="className" placeholder="Add New Class (Ex: Class 5 A)">
-    <button id="addClassBtn">Add Class</button>
-  </div>
-  <div class="list" id="classList"></div>
-</div>
+<script>
+    function openTab(evt, tabId) {
+        // Hide all elements with class="tab-content"
+        let tabContents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabContents.length; i++) {
+            tabContents[i].style.display = "none";
+            tabContents[i].classList.remove("active");
+        }
 
-<div class="card">
-  <h3>3. Subjects</h3>
-  <div class="row">
-    <select id="subClass" class="dynamic-class-select"></select>
-    <input id="subName" placeholder="Subject Name">
-    <input id="subMax" type="number" placeholder="Max Marks (Optional)" style="max-width: 150px;">
-    <button id="addSubjectBtn">Add Subject</button>
-  </div>
-  <div class="list" id="subjectList"></div>
-</div>
+        // Remove the class "active" from all elements with class="tab-btn"
+        let tabBtns = document.getElementsByClassName("tab-btn");
+        for (let i = 0; i < tabBtns.length; i++) {
+            tabBtns[i].classList.remove("active");
+        }
 
-<div class="card">
-  <h3>4. Students</h3>
-  <div class="row">
-    <select id="stuClass" class="dynamic-class-select"></select>
-    <input id="reg" type="text" placeholder="Register No">
-    <input id="sname" placeholder="Student Name">
-    <button id="addStuBtn">Add</button> 
-  </div>
-  <div class="row" style="margin-top: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
-      <div class="file-upload-wrapper">
-          <button class="excel-btn"><i class="fas fa-file-excel"></i> Bulk Upload Students (Excel)</button>
-          <input type="file" id="studentsExcel" accept=".xlsx, .xls">
-      </div>
-      <button class="danger del-all-btn" id="delAllStuBtn">Delete All</button>
-  </div>
-  <small style="color: #666; display: block; margin-bottom: 10px;">* എക്സൽ അപ്‌ലോഡ് ചെയ്യുമ്പോൾ കോളങ്ങളുടെ പേര് 'RegNo', 'Name' എന്ന് തന്നെ നൽകുക.</small>
-  <div class="list" id="studentList"></div>
-</div>
-
-<div class="card">
-  <h3>5. Marks Entry</h3>
-  <div class="row">
-    <select id="markClass" class="dynamic-class-select"></select>
-    <select id="markReg"></select>
-    <button class="danger del-all-btn" id="delAllMarksBtn">Delete All Marks</button>
-  </div>
-  <strong id="markStuName" style="color: #007bff; display:block; margin-bottom:10px; font-size: 18px;"></strong> 
-  
-  <div id="markInputsContainer" style="display:none;"></div>
-  <div id="markListContainer" style="margin-top: 20px;"></div>
-  
-  <div style="margin-top: 25px; border-top: 1px dashed #ccc; padding-top: 15px;">
-      <h4 style="margin:0 0 10px;">Bulk Upload Marks (Excel)</h4>
-      <div class="file-upload-wrapper" style="max-width: 250px;">
-          <button class="excel-btn"><i class="fas fa-file-excel"></i> Upload Marks</button>
-          <input type="file" id="marksExcel" accept=".xlsx, .xls">
-      </div>
-      <small style="color: #666; display: block; margin-top: 5px;">* എക്സൽ ഫോർമാറ്റ്: ആദ്യത്തെ കോളം 'RegNo', ബാക്കിയുള്ള കോളങ്ങൾ സബ്ജക്ടിന്റെ അതേ പേരുകൾ ആയിരിക്കണം.</small>
-  </div>
-</div>
-
-<div class="card">
-  <h3>6. Attendance (Optional)</h3>
-  <div class="row">
-    <select id="attClass" class="dynamic-class-select"></select>
-    <button class="danger del-all-btn" id="delAllAttBtn">Delete All Attendance</button>
-  </div>
-  <div id="attInputsContainer" style="display:none;"></div>
-</div>
-
-<div class="card">
-  <h3>7. Auto Result & PDF Download</h3>
-  <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Calculate ranks before downloading the PDF.</p>
-  <div class="row">
-    <select id="resClass" class="dynamic-class-select"></select>
-    <button class="success" id="calcRankBtn">1. Calculate Rank & Grade</button>
-    <button id="downloadPdfBtn">2. Download PDF</button>
-  </div>
-</div>
-
-</div>
+        // Show the current tab, and add an "active" class to the button that opened the tab
+        document.getElementById(tabId).style.display = "block";
+        document.getElementById(tabId).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+</script>
 
 <script type="module" src="admin.js"></script>
 
