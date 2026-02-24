@@ -2,171 +2,392 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="google-adsense-account" content="ca-pub-8490206815383590">
-<title>Madrasa Exam Result</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Madrasa Exam Results</title>
+<meta name="robots" content="index, follow">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
-/* --- CSS STYLES --- */
-body{
-  margin:0;
-  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background:#f2f4f7;
-}
-.container{
-  max-width:900px;
-  margin:20px auto;
-  padding:0 15px;
-}
-.card{
-  background:#fff;
-  border-radius:18px;
-  padding:25px;
-  box-shadow:0 6px 20px rgba(0,0,0,.08);
-}
-.header{text-align:center}
-.header h2{margin:0; color: #007bff; font-size: 24px; word-break: break-word;}
-.header .location {color: #555; font-size: 16px; margin-top: 6px; font-weight: 500;}
-.header .badge {display: inline-block; margin-top: 15px; background: #e2e8f0; color: #475569; padding: 5px 15px; border-radius: 20px; font-size: 13px; font-weight: bold;}
+    /* --- CSS STYLES --- */
+    :root {
+        --primary-color: #0d6efd;
+        --secondary-color: #f8f9fa;
+        --text-color: #333;
+        --border-color: #e0e0e0;
+        --success: #198754;
+        --danger: #dc3545;
+        --info: #0dcaf0;
+    }
 
-.hr{height:2px; background:#eee; margin:20px 0;}
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px 20px;
-  font-size: 16px;
-}
-@media(max-width:640px){
-  .grid{grid-template-columns:1fr;}
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:20px;
-}
-th,td{
-  border:1px solid #ddd;
-  padding:12px 10px;
-  text-align: left;
-}
-th{background:#f8f9fa; color: #333;}
-td {font-weight: 500; color: #444;}
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f0f2f5;
+        margin: 0;
+        padding: 0;
+        color: var(--text-color);
+    }
 
-/* Status Colors */
-.status-pass{color:#28a745; font-weight:bold;}
-.status-fail{color:#dc3545; font-weight:bold;}
-.status-promoted{color:#17a2b8; font-weight:bold;}
+    .container {
+        max-width: 800px;
+        margin: 30px auto;
+        padding: 0 15px;
+    }
 
-.bottom-grid {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 10px;
-  margin-top: 20px;
-  border: 1px solid #eee;
-}
+    /* Header Styling */
+    .header-card {
+        background: #fff;
+        padding: 30px 20px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+        border-top: 5px solid var(--primary-color);
+    }
 
-.buttons{
-  margin-top:20px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-button{
-  padding:15px;
-  border:none;
-  border-radius:12px;
-  font-size:16px;
-  font-weight: bold;
-  cursor:pointer;
-  transition: 0.2s;
-}
-button:active { transform: scale(0.98); }
-.download{background:#00796b;color:#fff}
-.back{background:#607d8b;color:#fff}
+    .header-card h1 {
+        margin: 0;
+        color: var(--primary-color);
+        font-size: 26px;
+        font-weight: 700;
+    }
 
-/* Coming Soon Screen */
-#comingSoonCard {
-  text-align: center;
-  padding: 50px 20px;
-}
-#comingSoonCard i {
-  font-size: 60px;
-  color: #ff9800;
-  margin-bottom: 20px;
-}
-#comingSoonCard h2 {
-  color: #333;
-  margin-bottom: 10px;
-}
-#comingSoonCard p {
-  color: #666;
-  font-size: 16px;
-  line-height: 1.5;
-}
+    .header-card p {
+        margin: 5px 0 0;
+        color: #666;
+        font-size: 14px;
+    }
 
-/* Loader */
-#overlay {position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #333;}
+    /* Search Box Styling */
+    .search-card {
+        background: #fff;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+    }
+
+    .search-card h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 18px;
+        color: #444;
+        text-align: center;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 15px;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-color);
+    }
+
+    .btn-search {
+        width: 100%;
+        padding: 12px;
+        background-color: var(--primary-color);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .btn-search:hover {
+        background-color: #0b5ed7;
+    }
+
+    /* Result Card Styling */
+    .result-card {
+        background: #fff;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        display: none; /* Hidden by default */
+        position: relative;
+    }
+
+    .student-info {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        border-bottom: 2px dashed #eee;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+
+    .info-item {
+        flex: 1 1 45%;
+        margin-bottom: 10px;
+    }
+
+    .info-item span {
+        display: block;
+        font-size: 12px;
+        color: #777;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-item strong {
+        font-size: 16px;
+        color: #222;
+    }
+
+    .student-name {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+    .student-name strong { font-size: 20px; color: var(--primary-color); }
+
+    /* Table Styling */
+    .marks-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    .marks-table th, .marks-table td {
+        padding: 12px 15px;
+        border: 1px solid #eee;
+        text-align: left;
+    }
+
+    .marks-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        font-size: 14px;
+        color: #555;
+    }
+
+    .marks-table td {
+        font-size: 15px;
+        font-weight: 500;
+    }
+
+    .marks-table tr:hover {
+        background-color: #fafafa;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+
+    .summary-box {
+        text-align: center;
+        padding: 15px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    .summary-box span {
+        display: block;
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .summary-box strong {
+        font-size: 20px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #fff;
+    }
+
+    .bg-passed { background-color: var(--success); }
+    .bg-failed { background-color: var(--danger); }
+    .bg-promoted { background-color: var(--info); }
+
+    .btn-print {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background-color: #6c757d;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 25px;
+        text-align: center;
+    }
+
+    .btn-print:hover { background-color: #5a6268; }
+
+    /* Coming Soon Box */
+    .coming-soon-box {
+        background: #fff;
+        padding: 40px 20px;
+        text-align: center;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        display: none;
+    }
+    
+    .coming-soon-box i { font-size: 50px; color: #ffc107; margin-bottom: 15px; }
+    .coming-soon-box h2 { margin: 0 0 10px; color: #333; }
+
+    #loader {
+        text-align: center;
+        padding: 20px;
+        display: none;
+        color: var(--primary-color);
+        font-weight: bold;
+    }
+
+    /* Print Styles */
+    @media print {
+        body { background: #fff; }
+        .search-card, .btn-print, .header-card { display: none !important; }
+        .result-card { box-shadow: none; display: block !important; padding: 0; border: none; }
+        .container { margin: 0; max-width: 100%; }
+        /* Add a nice print header dynamically */
+        #printHeader { display: block !important; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px;}
+        #printHeader h1 { font-size: 24px; margin: 0; color: #000; }
+        #printHeader p { margin: 5px 0 0; font-size: 14px; color: #333; }
+    }
+    
+    #printHeader { display: none; }
+
 </style>
 </head>
-
 <body>
-
-<div id="overlay">Loading Result...</div>
 
 <div class="container">
     
-    <div class="card" id="resultCard" style="display: none;">
-      <div class="header">
-        <h2 id="madName">Madrasa Exam Result</h2>
-        <div id="madLoc" class="location"></div> <div class="badge">Result Sheet</div>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="grid">
-        <div><b>Name:</b> <span id="sName" style="color:#007bff">-</span></div>
-        <div><b>Register No:</b> <span id="sReg">-</span></div>
-        <div><b>Class:</b> <span id="sClass">-</span></div>
-        <div><b>Attendance:</b> <span id="sAtt">-</span></div>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Subject</th>
-            <th>Marks</th>
-          </tr>
-        </thead>
-        <tbody id="marks"></tbody>
-      </table>
-
-      <div class="grid bottom-grid">
-        <div><b>Rank:</b> <span id="sRank" style="color:#007bff; font-weight:bold;">-</span></div>
-        <div><b>Grade:</b> <span id="sGrade" style="color:#6f42c1; font-weight:bold;">-</span></div>
-        <div><b>Total Marks:</b> <span id="sTotal">-</span></div>
-        <div><b>Status:</b> <span id="sStatus">-</span></div>
-      </div>
+    <div class="header-card" id="headerCard">
+        <h1 id="madrasaName">Loading...</h1>
+        <p id="madrasaPlace"></p>
     </div>
-    
-    <div class="card" id="comingSoonCard" style="display: none;">
+
+    <div id="printHeader">
+        <h1 id="printMadrasaName">Madrasa Name</h1>
+        <p id="printMadrasaPlace">Place</p>
+        <p><strong>Official Result / Marksheet</strong></p>
+    </div>
+
+    <div class="coming-soon-box" id="comingSoonBox">
         <i class="fas fa-lock"></i>
-        <h2>Coming Soon!</h2>
-        <p>റിസൾട്ട് പബ്ലിഷ് ചെയ്തിട്ടില്ല. അഡ്മിൻ റിസൾട്ട് പബ്ലിഷ് ചെയ്ത ശേഷം ദയവായി വീണ്ടും പരിശോധിക്കുക.</p>
+        <h2>Results Coming Soon!</h2>
+        <p>പരീക്ഷാഫലം ഉടൻ തന്നെ ഈ വെബ്സൈറ്റിൽ പ്രസിദ്ധീകരിക്കുന്നതാണ്. ദയവായി കാത്തിരിക്കുക.</p>
     </div>
 
-    <div class="buttons" id="buttonsBox" style="display: none;">
-      <button class="download" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
-      <button class="back" onclick="history.back()"><i class="fas fa-arrow-left"></i> Go Back</button>
+    <div class="search-card" id="searchBox">
+        <h3>Check Your Result</h3>
+        <div class="form-group">
+            <label>Select Class (ക്ലാസ്സ്)</label>
+            <select id="classSelect" class="form-control" onchange="loadStudentsForClass()">
+                <option value="">-- Select Class --</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Register No. (രജിസ്റ്റർ നമ്പർ)</label>
+            <select id="regSelect" class="form-control">
+                <option value="">-- Select Register Number --</option>
+            </select>
+        </div>
+        
+        <button class="btn-search" onclick="fetchResult()"><i class="fas fa-search"></i> Get Result</button>
+        <div id="loader"><i class="fas fa-spinner fa-spin"></i> Fetching Result...</div>
+    </div>
+
+    <div class="result-card" id="resultCard">
+        
+        <div class="student-info">
+            <div class="info-item student-name">
+                <span>Student Name</span>
+                <strong id="resName">---</strong>
+            </div>
+            <div class="info-item">
+                <span>Register Number</span>
+                <strong id="resReg">---</strong>
+            </div>
+            <div class="info-item">
+                <span>Class</span>
+                <strong id="resClass">---</strong>
+            </div>
+        </div>
+
+        <table class="marks-table">
+            <thead>
+                <tr>
+                    <th>Subject (വിഷയം)</th>
+                    <th style="text-align: center;">Mark / Grade</th>
+                </tr>
+            </thead>
+            <tbody id="marksTableBody">
+                </tbody>
+        </table>
+
+        <div class="summary-grid">
+            <div class="summary-box">
+                <span>Total Marks</span>
+                <strong id="resTotal" style="color: var(--primary-color);">0</strong>
+            </div>
+            <div class="summary-box">
+                <span>Rank</span>
+                <strong id="resRank" style="color: var(--primary-color);">-</strong>
+            </div>
+            <div class="summary-box">
+                <span>Grade</span>
+                <strong id="resGrade" style="color: #6f42c1;">-</strong>
+            </div>
+            <div class="summary-box">
+                <span>Result Status</span>
+                <div id="resStatusBadge" class="status-badge bg-passed">PASSED</div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 15px; font-size: 13px; color: #666;">
+            <strong>Attendance:</strong> <span id="resAtt">-</span>
+        </div>
+
+        <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print / Save as PDF</button>
     </div>
 
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, where, doc, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyDyyTKs5JVvTScGO3vdfOJBX7DCjv-M8ZQ",
@@ -178,136 +399,186 @@ const app = initializeApp({
 });
 
 const db = getFirestore(app);
+const mid = new URLSearchParams(window.location.search).get("mid");
 
-const params = new URLSearchParams(location.search);
-const mid = params.get("mid");
-const cls = params.get("class");
-const reg = params.get("reg");
+let isPublished = false;
 
-async function loadResult(){
-  if(!mid || !cls || !reg) {
-      alert("Invalid Result Link");
-      history.back();
-      return;
-  }
-
-  try {
-      // 1. Check Madrasa & Publish Status
-      const madSnap = await getDoc(doc(db, "madrasas", mid));
-      if(!madSnap.exists()){
-        alert("Invalid Madrasa ID");
-        history.back();
+window.onload = async () => {
+    if(!mid) {
+        document.getElementById("headerCard").innerHTML = "<h2 style='color:red'>Invalid Link!</h2><p>Please use the correct link provided by the Madrasa.</p>";
+        document.getElementById("searchBox").style.display = "none";
         return;
-      }
-      
-      const madData = madSnap.data();
-      document.getElementById("madName").innerText = madData.name || "Madrasa Exam Result";
-      
-      // Set Location if available
-      if(madData.location) {
-          document.getElementById("madLoc").innerText = madData.location;
-      } else {
-          document.getElementById("madLoc").style.display = "none";
-      }
+    }
+    await loadMadrasaData();
+};
 
-      // If Locked (Coming Soon)
-      if(madData.isPublished === false) {
-          document.getElementById("overlay").style.display = "none";
-          document.getElementById("comingSoonCard").style.display = "block";
-          
-          // Show back button only
-          document.getElementById("buttonsBox").style.display = "flex";
-          document.querySelector(".download").style.display = "none"; 
-          return;
-      }
+async function loadMadrasaData() {
+    const d = await getDoc(doc(db, "madrasas", mid));
+    if(d.exists()) {
+        const data = d.data();
+        let mName = data.name || "Madrasa Results";
+        let mLoc = data.location || "";
+        
+        document.getElementById("madrasaName").innerText = mName;
+        document.getElementById("madrasaPlace").innerText = mLoc;
+        document.getElementById("printMadrasaName").innerText = mName;
+        document.getElementById("printMadrasaPlace").innerText = mLoc;
+        document.title = mName + " - Results";
 
-      // 2. Fetch Student Details
-      const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",cls), where("reg","==",reg));
-      const stuSnap = await getDocs(stuQ);
+        isPublished = data.isPublished || false;
 
-      if(stuSnap.empty){
-        alert("Result not found for this Register Number!");
-        history.back();
-        return;
-      }
-
-      const stu = stuSnap.docs[0].data();
-      document.getElementById("sName").innerText = stu.name;
-      document.getElementById("sReg").innerText = reg;
-      document.getElementById("sClass").innerText = stu.className || cls;
-      
-      document.getElementById("sRank").innerText = stu.rank || "-";
-      document.getElementById("sGrade").innerText = stu.grade || "-";
-      document.getElementById("sTotal").innerText = stu.totalMarks || "0";
-
-      // Status Colors
-      const statusEl = document.getElementById("sStatus");
-      let statusStr = stu.resultStatus || "-";
-      statusEl.innerText = statusStr;
-      
-      if(statusStr === "PASSED") statusEl.className = "status-pass";
-      else if(statusStr === "PROMOTED") statusEl.className = "status-promoted";
-      else statusEl.className = "status-fail";
-
-      // 3. Fetch Attendance
-      const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class","==",cls), where("reg","==",reg));
-      const attSnap = await getDocs(attQ);
-      document.getElementById("sAtt").innerText = attSnap.empty ? "-" : attSnap.docs[0].data().attendance;
-
-      // 4. Fetch Subjects (To maintain strict order)
-      const subQ = query(collection(db, "madrasas", mid, "subjects"), where("class","==",cls));
-      const subSnap = await getDocs(subQ);
-      let subjects = [];
-      subSnap.forEach(d => subjects.push(d.data()));
-      subjects.sort((a,b)=> (a.createdAt||0) - (b.createdAt||0)); // Sort by creation time
-
-      // 5. Fetch Marks
-      const markQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",cls), where("reg","==",reg));
-      const markSnap = await getDocs(markQ);
-      let marksMap = {};
-      markSnap.forEach(d => {
-          let m = d.data();
-          marksMap[m.subject] = m.mark;
-      });
-
-      // 6. Build HTML Table
-      const marksTbody = document.getElementById("marks");
-      marksTbody.innerHTML = "";
-      
-      subjects.forEach(s => {
-          let markVal = marksMap[s.subject] !== undefined ? marksMap[s.subject] : "-";
-          marksTbody.innerHTML += `
-            <tr>
-              <td>${s.subject}</td>
-              <td><b>${markVal}</b></td>
-            </tr>
-          `;
-      });
-
-      // Show Result
-      document.getElementById("overlay").style.display = "none";
-      document.getElementById("resultCard").style.display = "block";
-      document.getElementById("buttonsBox").style.display = "flex";
-
-  } catch (error) {
-      console.error("Error loading result:", error);
-      alert("Something went wrong! Please try again later.");
-      document.getElementById("overlay").style.display = "none";
-  }
+        if(isPublished) {
+            loadClasses();
+        } else {
+            // Lock State
+            document.getElementById("searchBox").style.display = "none";
+            document.getElementById("comingSoonBox").style.display = "block";
+        }
+    } else {
+        alert("Madrasa not found!");
+    }
 }
 
-loadResult();
+async function loadClasses() {
+    const q = query(collection(db, "madrasas", mid, "classes"), orderBy("createdAt"));
+    const snap = await getDocs(q);
+    let select = document.getElementById("classSelect");
+    
+    snap.forEach(d => {
+        let opt = document.createElement("option");
+        opt.value = d.id;
+        opt.text = d.data().name;
+        select.add(opt);
+    });
+}
 
-window.downloadPDF = function() {
-  const element = document.getElementById("resultCard");
-  const opt = {
-      margin:       10,
-      filename:     `Result_${reg}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-  html2pdf().set(opt).from(element).save();
+window.loadStudentsForClass = async () => {
+    let classId = document.getElementById("classSelect").value;
+    let regSelect = document.getElementById("regSelect");
+    regSelect.innerHTML = "<option value=''>-- Select Register Number --</option>";
+    document.getElementById("resultCard").style.display = "none";
+
+    if(!classId) return;
+
+    const q = query(collection(db, "madrasas", mid, "students"), where("class","==",classId));
+    const snap = await getDocs(q);
+    let students = [];
+    snap.forEach(d => students.push(d.data().reg));
+    
+    // Sort alphanumerically
+    students.sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
+    
+    students.forEach(reg => {
+        let opt = document.createElement("option");
+        opt.value = reg;
+        opt.text = reg;
+        regSelect.add(opt);
+    });
+}
+
+// Sort subjects helper
+function sortSubjects(arr) { arr.sort((a,b)=> (a.createdAt||0) - (b.createdAt||0)); }
+
+window.fetchResult = async () => {
+    let classId = document.getElementById("classSelect").value;
+    let cName = document.getElementById("classSelect").options[document.getElementById("classSelect").selectedIndex].text;
+    let regNo = document.getElementById("regSelect").value;
+
+    if(!classId || !regNo) {
+        alert("Please select Class and Register Number.");
+        return;
+    }
+
+    document.getElementById("loader").style.display = "block";
+    document.getElementById("resultCard").style.display = "none";
+
+    try {
+        // 1. Get Student Info
+        const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",classId), where("reg","==",regNo));
+        const stuSnap = await getDocs(stuQ);
+        
+        if(stuSnap.empty) {
+            alert("Student details not found!");
+            document.getElementById("loader").style.display = "none";
+            return;
+        }
+        
+        let studentData = stuSnap.docs[0].data();
+
+        // 2. Get Subjects
+        const subQ = query(collection(db, "madrasas", mid, "subjects"), where("class","==",classId));
+        const subSnap = await getDocs(subQ);
+        let subjects = [];
+        subSnap.forEach(d => subjects.push(d.data()));
+        sortSubjects(subjects);
+
+        // 3. Get Marks
+        const markQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",classId), where("reg","==",regNo));
+        const markSnap = await getDocs(markQ);
+        let marksMap = {};
+        markSnap.forEach(d => { marksMap[d.data().subject] = d.data().mark; });
+
+        // 4. Get Attendance
+        const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class","==",classId), where("reg","==",regNo));
+        const attSnap = await getDocs(attQ);
+        let attendance = "-";
+        if(!attSnap.empty) { attendance = attSnap.docs[0].data().attendance || "-"; }
+
+        // Populate HTML
+        document.getElementById("resName").innerText = studentData.name || "---";
+        document.getElementById("resReg").innerText = studentData.reg || "---";
+        document.getElementById("resClass").innerText = cName;
+        document.getElementById("resAtt").innerText = attendance;
+
+        // Build Table
+        let tbody = document.getElementById("marksTableBody");
+        tbody.innerHTML = "";
+        
+        if(subjects.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='2' style='text-align:center; color:red;'>No subjects found</td></tr>";
+        } else {
+            subjects.forEach(sub => {
+                let mark = marksMap[sub.subject] !== undefined ? marksMap[sub.subject] : "<span style='color:#dc3545'>Absent / N/A</span>";
+                tbody.innerHTML += `<tr>
+                    <td>${sub.subject}</td>
+                    <td style="text-align: center; font-weight: bold;">${mark}</td>
+                </tr>`;
+            });
+        }
+
+        // Summary Data
+        document.getElementById("resTotal").innerText = studentData.totalMarks || "0";
+        document.getElementById("resRank").innerText = studentData.rank || "-";
+        document.getElementById("resGrade").innerText = studentData.grade || "-";
+        
+        let statusBadge = document.getElementById("resStatusBadge");
+        let statusText = studentData.resultStatus || "Pending";
+        statusBadge.innerText = statusText;
+        
+        // Color coding for Status
+        statusBadge.className = "status-badge"; // reset
+        if(statusText === "PASSED") {
+            statusBadge.classList.add("bg-passed");
+        } else if (statusText === "FAILED") {
+            statusBadge.classList.add("bg-failed");
+        } else if (statusText === "PROMOTED") {
+            statusBadge.classList.add("bg-promoted");
+        } else {
+            statusBadge.style.backgroundColor = "#6c757d"; // grey for pending
+        }
+
+        // Show Card
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("resultCard").style.display = "block";
+        
+        // Scroll to result slightly
+        document.getElementById("resultCard").scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    } catch(err) {
+        console.error(err);
+        alert("An error occurred while fetching the result. Please try again.");
+        document.getElementById("loader").style.display = "none";
+    }
 }
 </script>
 
