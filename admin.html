@@ -123,7 +123,7 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
             <input id="passmark" type="number" placeholder="Global Pass Mark">
           </div>
           <div class="row">
-            <button id="saveSettingsBtn" style="width: 100%; max-width: 200px;"><i class="fas fa-save"></i> Save Settings</button>
+            <button id="saveSettingsBtn" style="width: 100%;"><i class="fas fa-save"></i> Save Settings</button>
           </div>
           <div class="publish-box">
               <p style="font-size: 14px; color: #444; margin-top: 0; margin-bottom: 10px; font-weight: 500;">
@@ -151,7 +151,7 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
           <div class="row">
             <select id="subClass" class="dynamic-class-select"></select>
             <input id="subName" placeholder="Subject Name">
-            <input id="subMax" type="number" placeholder="Max Marks" style="max-width: 120px;">
+            <input id="subMax" type="number" placeholder="Max Marks">
             <button id="addSubjectBtn">Add Subject</button>
           </div>
           <div class="list" id="subjectList"></div>
@@ -167,14 +167,20 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
             <input id="sname" placeholder="Student Name">
             <button id="addStuBtn">Add</button> 
           </div>
-          <div class="row" style="margin-top: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
+          
+          <div class="row" style="margin-top: 15px;">
               <div class="file-upload-wrapper">
                   <button class="excel-btn"><i class="fas fa-file-excel"></i> Bulk Upload (Excel)</button>
                   <input type="file" id="studentsExcel" accept=".xlsx, .xls">
               </div>
-              <button class="danger del-all-btn" id="delAllStuBtn">Delete All</button>
+              <button class="danger del-all-btn" id="delAllStuBtn"><i class="fas fa-trash"></i> Delete All</button>
           </div>
-          <small style="color: #666; display: block; margin-bottom: 10px;">* എക്സൽ അപ്‌ലോഡ് ചെയ്യുമ്പോൾ കോളങ്ങളുടെ പേര് 'RegNo', 'Name' എന്ന് തന്നെ നൽകുക.</small>
+          
+          <small style="color: #444; display: block; line-height: 1.5; background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #198754; margin-bottom: 10px;">
+              <b>* എക്സൽ അപ്‌ലോഡ് ചെയ്യുമ്പോൾ:</b><br>
+              കോളങ്ങളുടെ പേര് <b>RegNo</b>, <b>Name</b> എന്ന് തന്നെ നൽകുക.
+          </small>
+          
           <div class="list" id="studentList"></div>
         </div>
     </div>
@@ -185,7 +191,7 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
           <div class="row">
             <select id="markClass" class="dynamic-class-select"></select>
             <select id="markReg"></select>
-            <button class="danger del-all-btn" id="delAllMarksBtn">Delete All Marks</button>
+            <button class="danger del-all-btn" id="delAllMarksBtn"><i class="fas fa-trash"></i> Delete All Marks</button>
           </div>
           <strong id="markStuName" style="color: #007bff; display:block; margin-bottom:10px; font-size: 18px;"></strong> 
           
@@ -194,11 +200,15 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
           
           <div style="margin-top: 25px; border-top: 1px dashed #ccc; padding-top: 15px;">
               <h4 style="margin:0 0 10px;">Bulk Upload Marks (Excel)</h4>
-              <div class="file-upload-wrapper" style="max-width: 250px;">
-                  <button class="excel-btn"><i class="fas fa-file-excel"></i> Upload Marks</button>
-                  <input type="file" id="marksExcel" accept=".xlsx, .xls">
+              
+              <div class="row">
+                  <div class="file-upload-wrapper">
+                      <button class="excel-btn"><i class="fas fa-file-excel"></i> Upload Marks</button>
+                      <input type="file" id="marksExcel" accept=".xlsx, .xls">
+                  </div>
               </div>
-              <small style="color: #666; display: block; margin-top: 10px; line-height: 1.5; background: #f8f9fa; padding: 10px; border-radius: 6px; border-left: 3px solid #198754;">
+              
+              <small style="color: #444; display: block; margin-top: 10px; line-height: 1.5; background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #198754;">
                   <b>* എക്സൽ ഫോർമാറ്റ്:</b><br>
                   ആദ്യത്തെ കോളത്തിന്റെ പേര് <b>RegNo</b> എന്ന് നൽകുക. ബാക്കിയുള്ള കോളങ്ങളുടെ പേര് നിങ്ങൾ നൽകിയ <b>വിഷയങ്ങളുടെ (Subjects) അതേ പേര്</b> തന്നെ ആയിരിക്കണം.
               </small>
@@ -211,7 +221,7 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
           <h3>Attendance (Optional)</h3>
           <div class="row">
             <select id="attClass" class="dynamic-class-select"></select>
-            <button class="danger del-all-btn" id="delAllAttBtn">Delete All Attendance</button>
+            <button class="danger del-all-btn" id="delAllAttBtn"><i class="fas fa-trash"></i> Delete All Attendance</button>
           </div>
           <div id="attInputsContainer" style="display:none;"></div>
         </div>
