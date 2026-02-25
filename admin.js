@@ -398,43 +398,48 @@ async function loadStudentMarksForm(){
     }
 }
 
-// GRADE CALCULATION LOGIC (UPDATED)
-function getGrade(percentage) {
-    if(percentage >= 90) return "A+";
-    if(percentage >= 80) return "A";
-    if(percentage >= 70) return "B+";
-    if(percentage >= 60) return "B";
-    if(percentage >= 50) return "C+";
-    if(percentage >= 40) return "C";
-    if(percentage >= 30) return "D+";
-    return "D"; // ശതമാനം കുറവാണെങ്കിലും പാസ്സായ ആർക്കും ഗ്രേഡ് ഇല്ലാതെ വരില്ല
-}
-
+// GRADE & RANK CALCULATION LOGIC (WITH NEW CONDITIONS)
 async function processRankCalculation(classId) {
     const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",classId));
     const stuSnap = await getDocs(stuQ);
     if(stuSnap.empty) return;
 
-    // Fetch Max Marks to calculate correct percentage
     const subQ = query(collection(db, "madrasas", mid, "subjects"), where("class","==",classId));
     const subSnap = await getDocs(subQ);
     let totalMaxMarksPossible = 0;
     subSnap.forEach(s => {
         let max = s.data().maxMarks;
-        totalMaxMarksPossible += max ? Number(max) : 100; // മാക്സിമം മാർക്ക് കൊടുത്തില്ലെങ്കിൽ 100 ആയി കണക്കാക്കും
+        totalMaxMarksPossible += max ? Number(max) : 100;
     });
 
     const markQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",classId));
     const markSnap = await getDocs(markQ);
     
-    let studentMarksMap = {};
+    // DUPLICATE FILTER: Stores only one mark per subject for a student
+    let tempMarksMap = {}; 
+    
     markSnap.forEach(d => {
         const m = d.data();
-        if(!studentMarksMap[m.reg]) studentMarksMap[m.reg] = { total: 0, hasFailed: false };
-        if(typeof m.mark === 'number') {
-            studentMarksMap[m.reg].total += m.mark;
-            if(m.mark < globalPassMark) studentMarksMap[m.reg].hasFailed = true;
-        } else studentMarksMap[m.reg].hasFailed = true; 
+        if(!tempMarksMap[m.reg]) tempMarksMap[m.reg] = {};
+        tempMarksMap[m.reg][m.subject] = m.mark; // This safely overwrites any duplicate entries
+    });
+
+    // Calculate Correct Totals from filtered data
+    let studentMarksMap = {};
+    Object.keys(tempMarksMap).forEach(reg => {
+        let total = 0;
+        let hasFailed = false;
+        
+        Object.values(tempMarksMap[reg]).forEach(markVal => {
+            if(typeof markVal === 'number') {
+                total += markVal;
+                if(markVal < globalPassMark) hasFailed = true;
+            } else {
+                hasFailed = true;
+            }
+        });
+        
+        studentMarksMap[reg] = { total: total, hasFailed: hasFailed };
     });
 
     let resultsArray = [];
@@ -447,9 +452,23 @@ async function processRankCalculation(classId) {
         if (isPromoted) status = "PROMOTED"; 
         
         let grade = "-";
-        if((status === "PASSED" || status === "PROMOTED") && totalMaxMarksPossible > 0) {
-            let percentage = (sData.total / totalMaxMarksPossible) * 100;
-            grade = getGrade(percentage);
+        
+        // STRICT GRADE LOGIC:
+        if (status === "FAILED" || status === "PROMOTED") {
+            grade = "D"; // തോറ്റവർക്കും പ്രൊമോട്ട് ചെയ്യപ്പെട്ടവർക്കും നിർബന്ധമായും 'D' മാത്രം
+        } else if (status === "PASSED") {
+            if (totalMaxMarksPossible > 0) {
+                let percentage = (sData.total / totalMaxMarksPossible) * 100;
+                if(percentage >= 90) grade = "A+";
+                else if(percentage >= 80) grade = "A";
+                else if(percentage >= 70) grade = "B+";
+                else if(percentage >= 60) grade = "B";
+                else if(percentage >= 50) grade = "C+";
+                else if(percentage >= 40) grade = "C";
+                else grade = "D+"; // പാസ്സായി, പക്ഷേ ശതമാനം 40ൽ താഴെയാണെങ്കിൽ 'D+' നൽകും
+            } else {
+                grade = "D+"; // മാക്സിമം മാർക്ക് ലഭ്യമല്ലെങ്കിലും പാസ്സായ ആർക്കും 'D' വരില്ല
+            }
         }
         
         resultsArray.push({ docId: d.id, reg: data.reg, name: data.name, total: sData.total, status: status, grade: grade });
