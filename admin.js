@@ -23,16 +23,15 @@ let currentMarkStudentDocId = null;
 
 const showLoader = (show, text="") => {
     document.getElementById("overlay").style.display = show ? "flex" : "none";
-    document.getElementById("loadingText").innerText = text;
+    if(document.getElementById("loadingText")) document.getElementById("loadingText").innerText = text;
 };
 
-// Sort function 
 function sortSubjects(arr) { arr.sort((a,b)=> (a.createdAt||0) - (b.createdAt||0)); }
 
-// Initialize
 window.onload = async () => {
     if(!mid) return document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>Invalid Link (Madrasa ID Missing)</h2>";
-    await loadSettings();
+    const isAllowed = await loadSettings();
+    if(!isAllowed) return; 
     await loadClasses();
     attachEventListeners();
 };
@@ -54,13 +53,10 @@ function attachEventListeners() {
     document.getElementById("delAllAttBtn").onclick = deleteAllAttendance;
     document.getElementById("calcRankBtn").onclick = calculateAutoResultsBtn;
     document.getElementById("downloadPdfBtn").onclick = downloadPDF;
-    
-    // Excel Inputs
     document.getElementById("studentsExcel").addEventListener('change', handleStudentExcel);
     document.getElementById("marksExcel").addEventListener('change', handleMarksExcel);
 }
 
-// LOGOUT
 async function logoutAdmin() {
     if(confirm("Are you sure you want to logout?")) {
         try { await signOut(auth); window.location.href = "index.html"; } 
@@ -68,11 +64,29 @@ async function logoutAdmin() {
     }
 }
 
-/* ================= SETTINGS ================= */
 async function loadSettings(){
   const d = await getDoc(doc(db, "madrasas", mid));
   if(d.exists()){
     const data = d.data();
+    let isBlocked = false;
+    if(data.status === 'blocked') isBlocked = true;
+    if(data.expiryDate) {
+        let today = new Date().toISOString().split("T")[0]; 
+        if(today > data.expiryDate) isBlocked = true;
+    }
+    
+    if(isBlocked) {
+        document.body.innerHTML = `
+            <div style="display:flex; height:100vh; align-items:center; justify-content:center; background:#f8d7da; color:#721c24; font-family:sans-serif; text-align:center; padding:20px;">
+                <div>
+                    <i class="fas fa-ban" style="font-size: 60px; color: #dc3545; margin-bottom: 20px;"></i>
+                    <h1 style="font-size:28px; margin-bottom:10px;">Access Denied!</h1>
+                    <p style="font-size:16px; line-height:1.6;">Your Madrasa's Admin Panel has been locked. <br>This might be because the subscription expired or it was blocked by the Super Admin.<br><br><b>Please contact the Developer to unlock (₹300/year).</b></p>
+                </div>
+            </div>`;
+        return false; 
+    }
+
     document.getElementById("mname").value = data.name || "";
     document.getElementById("mloc").value = data.location || "";
     document.getElementById("passmark").value = data.passmark || 40;
@@ -80,9 +94,11 @@ async function loadSettings(){
     document.getElementById("title").innerText = data.name || "New Madrasa Setup";
     isResultPublished = data.isPublished || false;
     updateVisibilityBtnUI();
+    return true;
   } else {
     document.getElementById("title").innerText = "New Madrasa Setup";
-    await setDoc(doc(db, "madrasas", mid), { name: "New Madrasa", passmark: 40, createdAt: Date.now() });
+    await setDoc(doc(db, "madrasas", mid), { name: "New Madrasa", passmark: 40, status: 'active', createdAt: Date.now() });
+    return true;
   }
 }
 
@@ -108,6 +124,7 @@ async function toggleVisibility() {
 
 function updateVisibilityBtnUI() {
     const btn = document.getElementById("visibilityBtn");
+    if(!btn) return;
     if(isResultPublished) {
         btn.innerHTML = "<i class='fas fa-lock'></i> Lock Result (Hide from Students)";
         btn.className = "danger";
@@ -117,7 +134,6 @@ function updateVisibilityBtnUI() {
     }
 }
 
-/* ================= CLASSES ================= */
 async function loadClasses(){
     const q = query(collection(db, "madrasas", mid, "classes"), orderBy("createdAt"));
     const snap = await getDocs(q);
@@ -137,12 +153,7 @@ async function loadClasses(){
             </div>
         </div>`;
     });
-
-    selects.forEach(s => {
-        let currentVal = s.value;
-        s.innerHTML = optionsHTML;
-        if(currentVal) s.value = currentVal; 
-    });
+    selects.forEach(s => { let currentVal = s.value; s.innerHTML = optionsHTML; if(currentVal) s.value = currentVal; });
 }
 
 async function addClass() {
@@ -163,7 +174,6 @@ window.editClass = async (id, oldName) => {
     }
 };
 
-/* ================= SUBJECTS ================= */
 async function loadSubjects(){
   const list = document.getElementById("subjectList");
   list.innerHTML="";
@@ -177,13 +187,7 @@ async function loadSubjects(){
 
   subjects.forEach(s => {
     let max = s.maxMarks ? `(Max: ${s.maxMarks})` : '';
-    list.innerHTML += `
-      <div class="item">
-        <span>${s.subject} <small style="color:#666">${max}</small></span>
-        <div class="action-btns">
-            <button class="icon-btn delete-btn" onclick="window.delDoc('${s.id}','subjects')"><i class="fas fa-trash"></i></button>
-        </div>
-      </div>`;
+    list.innerHTML += `<div class="item"><span>${s.subject} <small style="color:#666">${max}</small></span><div class="action-btns"><button class="icon-btn delete-btn" onclick="window.delDoc('${s.id}','subjects')"><i class="fas fa-trash"></i></button></div></div>`;
   });
 }
 
@@ -193,20 +197,15 @@ async function addSubject() {
   let cName = cSelect.options[cSelect.selectedIndex].text;
   let sName = document.getElementById("subName").value;
   let sMax = document.getElementById("subMax").value;
-  
   if(!cId || !sName) return alert("Fill subject details");
   
   let data = { class: cId, className: cName, subject: sName, createdAt: Date.now() };
   if(sMax) data.maxMarks = Number(sMax); 
-  
   await addDoc(collection(db, "madrasas", mid, "subjects"), data);
-  document.getElementById("subName").value = "";
-  document.getElementById("subMax").value = "";
+  document.getElementById("subName").value = ""; document.getElementById("subMax").value = "";
   loadSubjects();
 }
 
-
-/* ================= STUDENTS ================= */
 let editingStudentId = null;
 function loadStudentsForClass() {
     editingStudentId = null; 
@@ -221,7 +220,6 @@ async function loadStudents(){
   list.innerHTML="";
   const cId = document.getElementById("stuClass").value;
   if(!cId) return;
-  
   const q = query(collection(db, "madrasas", mid, "students"), where("class","==",cId));
   const snap = await getDocs(q);
   let students = [];
@@ -229,21 +227,12 @@ async function loadStudents(){
   students.sort((a, b) => String(a.reg).localeCompare(String(b.reg), undefined, { numeric: true }));
 
   students.forEach(s => {
-    list.innerHTML += `
-      <div class="item">
-        <span style="font-weight:500">${s.reg} - ${s.name}</span>
-        <div class="action-btns">
-            <button class="icon-btn edit-btn" onclick="window.editStudent('${s.id}', '${s.reg}', '${s.name}')"><i class="fas fa-pen"></i></button>
-            <button class="icon-btn delete-btn" onclick="window.delDoc('${s.id}','students')"><i class="fas fa-trash"></i></button>
-        </div>
-      </div>`;
+    list.innerHTML += `<div class="item"><span style="font-weight:500">${s.reg} - ${s.name}</span><div class="action-btns"><button class="icon-btn edit-btn" onclick="window.editStudent('${s.id}', '${s.reg}', '${s.name}')"><i class="fas fa-pen"></i></button><button class="icon-btn delete-btn" onclick="window.delDoc('${s.id}','students')"><i class="fas fa-trash"></i></button></div></div>`;
   });
 }
 
 window.editStudent = (id, r, n) => {
-    editingStudentId = id; 
-    document.getElementById("reg").value = r; 
-    document.getElementById("sname").value = n;
+    editingStudentId = id; document.getElementById("reg").value = r; document.getElementById("sname").value = n;
     document.getElementById("addStuBtn").innerText = "Update"; 
 };
 
@@ -251,8 +240,8 @@ async function addStudent() {
   let cId = document.getElementById("stuClass").value;
   let sel = document.getElementById("stuClass");
   let cName = sel.options[sel.selectedIndex].text;
-  let r = document.getElementById("reg").value;
-  let n = document.getElementById("sname").value;
+  let r = document.getElementById("reg").value.trim();
+  let n = document.getElementById("sname").value.trim();
   
   if(!cId || !r || !n) return alert("Fill all fields");
   showLoader(true);
@@ -261,6 +250,13 @@ async function addStudent() {
       await updateDoc(doc(db, "madrasas", mid, "students", editingStudentId), { reg: r, name: n });
       editingStudentId = null; document.getElementById("addStuBtn").innerText = "Add";
   } else {
+      // ഡ്യൂപ്ലിക്കേറ്റ് ചെക്ക് ചെയ്യുന്ന പുതിയ കോഡ്
+      const q = query(collection(db, "madrasas", mid, "students"), where("class","==",cId), where("reg","==",r));
+      const snap = await getDocs(q);
+      if(!snap.empty) {
+          alert("Error: ഈ ക്ലാസ്സിൽ ഇതേ രജിസ്റ്റർ നമ്പറിൽ മറ്റൊരു കുട്ടി നിലവിലുണ്ട്!");
+          showLoader(false); return;
+      }
       await addDoc(collection(db, "madrasas", mid, "students"),{ class:cId, className: cName, reg:r, name:n });
   }
   document.getElementById("reg").value=""; document.getElementById("sname").value=""; 
@@ -277,12 +273,9 @@ async function deleteAllStudents() {
     const snap = await getDocs(q);
     const batch = writeBatch(db);
     snap.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    loadStudents();
-    showLoader(false);
+    await batch.commit(); loadStudents(); showLoader(false);
 }
 
-/* ================= COMMON DELETE ================= */
 window.delDoc = async (id, col) => {
     if(confirm("Are you sure you want to delete this?")){
         await deleteDoc(doc(db, "madrasas", mid, col, id));
@@ -292,7 +285,6 @@ window.delDoc = async (id, col) => {
     }
 };
 
-/* ================= MARKS ================= */
 async function loadMarkRegs() {
     let mClass = document.getElementById("markClass").value;
     let markReg = document.getElementById("markReg");
@@ -314,8 +306,7 @@ async function loadMarkRegs() {
     q = query(collection(db, "madrasas", mid, "subjects"), where("class","==",mClass));
     let subs = [];
     (await getDocs(q)).forEach(d => subs.push({ id: d.id, ...d.data() }));
-    sortSubjects(subs); 
-    currentMarkSubjects = subs; 
+    sortSubjects(subs); currentMarkSubjects = subs; 
 }
 
 async function loadStudentMarksForm(){
@@ -336,10 +327,8 @@ async function loadStudentMarksForm(){
     if(!stuSnap.empty) {
         currentMarkStudentDocId = stuSnap.docs[0].id;
         let sData = stuSnap.docs[0].data();
-        stuRank = sData.rank || "-";
-        stuGrade = sData.grade || "-";
-        isPromoted = sData.isPromoted || false;
-        studentStatus = sData.resultStatus || "Not Calculated";
+        stuRank = sData.rank || "-"; stuGrade = sData.grade || "-";
+        isPromoted = sData.isPromoted || false; studentStatus = sData.resultStatus || "Not Calculated";
     }
 
     const q = query(collection(db, "madrasas", mid, "marks"), where("class","==",mClass), where("reg","==",mReg));
@@ -347,9 +336,7 @@ async function loadStudentMarksForm(){
     let existingMarks = {};
     docs.forEach(d => { existingMarks[d.data().subject] = { id: d.id, mark: d.data().mark }; });
 
-    if(currentMarkSubjects.length === 0){
-        markInputsContainer.innerHTML = `<p style="color:red;">No subjects found.</p>`; return;
-    }
+    if(currentMarkSubjects.length === 0){ markInputsContainer.innerHTML = `<p style="color:red;">No subjects found.</p>`; return; }
 
     let html = `<div class="subject-grid">`;
     let listHtml = ""; let totalMarks = 0; let hasFailed = false;
@@ -358,9 +345,7 @@ async function loadStudentMarksForm(){
         let markVal = existingMarks[sub.subject] ? existingMarks[sub.subject].mark : '';
         let docId = existingMarks[sub.subject] ? existingMarks[sub.subject].id : '';
         let maxStr = sub.maxMarks ? `(Max:${sub.maxMarks})` : '';
-        
         html += `<div class="subject-box"><label>${sub.subject} <small>${maxStr}</small></label><input type="text" class="bulk-mark-input" data-sub="${sub.subject}" data-docid="${docId}" value="${markVal}" placeholder="Mark/A"></div>`;
-        
         if(existingMarks[sub.subject]) {
             listHtml += `<div class="item"><span>${sub.subject}</span> <b>${existingMarks[sub.subject].mark}</b></div>`;
             if(typeof existingMarks[sub.subject].mark === 'number') {
@@ -385,7 +370,6 @@ async function loadStudentMarksForm(){
     if(listHtml !== "") {
         let statusColor = (studentStatus === "PASSED") ? "#28a745" : (studentStatus === "PROMOTED" ? "#17a2b8" : "#dc3545");
         let gradeStr = (stuGrade && stuGrade !== "-") ? ` | <strong>Grade:</strong> <span style='color:#6f42c1'>${stuGrade}</span>` : "";
-        
         document.getElementById("markListContainer").innerHTML = `
             <h4 style="border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom:10px; color:#444;">Saved Marks:</h4>
             <div class="list" style="margin-top:0;">${listHtml}</div>
@@ -398,88 +382,98 @@ async function loadStudentMarksForm(){
     }
 }
 
-// GRADE & RANK CALCULATION LOGIC (WITH NEW CONDITIONS)
+// ==== MAIN OPTIMIZATION: BUNDLING DATA FOR RESULT PAGE ====
 async function processRankCalculation(classId) {
     const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",classId));
     const stuSnap = await getDocs(stuQ);
     if(stuSnap.empty) return;
 
+    // 1. Fetch & Store Subjects List in Class Document
     const subQ = query(collection(db, "madrasas", mid, "subjects"), where("class","==",classId));
     const subSnap = await getDocs(subQ);
     let totalMaxMarksPossible = 0;
+    let subjectsData = [];
     subSnap.forEach(s => {
-        let max = s.data().maxMarks;
-        totalMaxMarksPossible += max ? Number(max) : 100;
+        subjectsData.push(s.data());
+        totalMaxMarksPossible += s.data().maxMarks ? Number(s.data().maxMarks) : 100;
     });
+    sortSubjects(subjectsData);
+    let subjectNames = subjectsData.map(s => s.subject); // Array of subjects
+    
+    // Save to Class doc so result page can read it in 1 request
+    await updateDoc(doc(db, "madrasas", mid, "classes", classId), { subjectList: subjectNames });
 
+    // 2. Fetch all Marks
     const markQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",classId));
     const markSnap = await getDocs(markQ);
-    
-    // DUPLICATE FILTER: Stores only one mark per subject for a student
     let tempMarksMap = {}; 
-    
     markSnap.forEach(d => {
         const m = d.data();
         if(!tempMarksMap[m.reg]) tempMarksMap[m.reg] = {};
-        tempMarksMap[m.reg][m.subject] = m.mark; // This safely overwrites any duplicate entries
+        tempMarksMap[m.reg][m.subject] = m.mark;
     });
 
-    // Calculate Correct Totals from filtered data
+    // 3. Fetch all Attendance
+    const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class","==",classId));
+    const attSnap = await getDocs(attQ);
+    let attMap = {};
+    attSnap.forEach(d => { attMap[d.data().reg] = d.data().attendance; });
+
     let studentMarksMap = {};
     Object.keys(tempMarksMap).forEach(reg => {
-        let total = 0;
-        let hasFailed = false;
-        
+        let total = 0; let hasFailed = false;
         Object.values(tempMarksMap[reg]).forEach(markVal => {
             if(typeof markVal === 'number') {
                 total += markVal;
                 if(markVal < globalPassMark) hasFailed = true;
-            } else {
-                hasFailed = true;
-            }
+            } else { hasFailed = true; }
         });
-        
-        studentMarksMap[reg] = { total: total, hasFailed: hasFailed };
+        studentMarksMap[reg] = { total: total, hasFailed: hasFailed, marksObj: tempMarksMap[reg] };
     });
 
     let resultsArray = [];
     stuSnap.forEach(d => {
         let data = d.data();
-        let sData = studentMarksMap[data.reg] || { total: 0, hasFailed: true }; 
+        let sData = studentMarksMap[data.reg] || { total: 0, hasFailed: true, marksObj: {} }; 
         let isPromoted = data.isPromoted || false;
+        let studentAtt = attMap[data.reg] || "-";
         
         let status = sData.hasFailed ? "FAILED" : "PASSED";
         if (isPromoted) status = "PROMOTED"; 
         
         let grade = "-";
-        
-        // STRICT GRADE LOGIC:
-        if (status === "FAILED" || status === "PROMOTED") {
-            grade = "D"; // തോറ്റവർക്കും പ്രൊമോട്ട് ചെയ്യപ്പെട്ടവർക്കും നിർബന്ധമായും 'D' മാത്രം
-        } else if (status === "PASSED") {
+        if (status === "FAILED" || status === "PROMOTED") { grade = "D"; } 
+        else if (status === "PASSED") {
             if (totalMaxMarksPossible > 0) {
                 let percentage = (sData.total / totalMaxMarksPossible) * 100;
-                if(percentage >= 90) grade = "A+";
-                else if(percentage >= 80) grade = "A";
-                else if(percentage >= 70) grade = "B+";
-                else if(percentage >= 60) grade = "B";
-                else if(percentage >= 50) grade = "C+";
-                else if(percentage >= 40) grade = "C";
-                else grade = "D+"; // പാസ്സായി, പക്ഷേ ശതമാനം 40ൽ താഴെയാണെങ്കിൽ 'D+' നൽകും
-            } else {
-                grade = "D+"; // മാക്സിമം മാർക്ക് ലഭ്യമല്ലെങ്കിലും പാസ്സായ ആർക്കും 'D' വരില്ല
-            }
+                if(percentage >= 90) grade = "A+"; else if(percentage >= 80) grade = "A";
+                else if(percentage >= 70) grade = "B+"; else if(percentage >= 60) grade = "B";
+                else if(percentage >= 50) grade = "C+"; else if(percentage >= 40) grade = "C";
+                else grade = "D+"; 
+            } else { grade = "D+"; }
         }
         
-        resultsArray.push({ docId: d.id, reg: data.reg, name: data.name, total: sData.total, status: status, grade: grade });
+        resultsArray.push({ 
+            docId: d.id, reg: data.reg, name: data.name, total: sData.total, status: status, grade: grade,
+            marksMapData: sData.marksObj, // Embed Marks Map
+            attendanceData: studentAtt    // Embed Attendance
+        });
     });
 
     resultsArray.sort((a, b) => b.total - a.total);
 
+    // 4. Update Student Documents with everything bundled
     const batch = writeBatch(db);
     resultsArray.forEach((res, index) => {
         res.rank = (res.status === "PASSED" || res.status === "PROMOTED") ? index + 1 : "-"; 
-        batch.update(doc(db, "madrasas", mid, "students", res.docId), { totalMarks: res.total, resultStatus: res.status, rank: res.rank, grade: res.grade }); 
+        batch.update(doc(db, "madrasas", mid, "students", res.docId), { 
+            totalMarks: res.total, 
+            resultStatus: res.status, 
+            rank: res.rank, 
+            grade: res.grade,
+            marksMap: res.marksMapData,   // Saved directly inside student
+            attendance: res.attendanceData // Saved directly inside student
+        }); 
     });
     await batch.commit();
 }
@@ -508,10 +502,7 @@ async function saveAllMarks() {
     });
     await batch.commit();
     await processRankCalculation(mClass);
-    
-    showLoader(false);
-    loadStudentMarksForm(); 
-    alert("Marks Saved & Grade/Rank Updated!");
+    showLoader(false); loadStudentMarksForm(); alert("Marks Saved & Grade/Rank Updated!");
 }
 
 async function deleteAllMarks() {
@@ -528,7 +519,6 @@ async function deleteAllMarks() {
     showLoader(false);
 }
 
-/* ================= ATTENDANCE ================= */
 async function loadAttendanceForm() {
     let aClass = document.getElementById("attClass").value;
     let attInputsContainer = document.getElementById("attInputsContainer");
@@ -569,9 +559,7 @@ async function saveAllAttendance() {
             else batch.set(doc(collection(db, "madrasas", mid, "attendance")), { class: aClass, className: cName, reg: regNo, attendance: val });
         } else if (val === "" && docId) batch.delete(doc(db, "madrasas", mid, "attendance", docId));
     });
-    await batch.commit();
-    showLoader(false);
-    alert("Attendance Saved!");
+    await batch.commit(); showLoader(false); alert("Attendance Saved!");
 }
 
 async function deleteAllAttendance() {
@@ -583,12 +571,9 @@ async function deleteAllAttendance() {
     const snap = await getDocs(q);
     const batch = writeBatch(db);
     snap.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    document.getElementById("attClass").dispatchEvent(new Event('change'));
-    showLoader(false);
+    await batch.commit(); document.getElementById("attClass").dispatchEvent(new Event('change')); showLoader(false);
 }
 
-/* ================= MANUAL RANK BUTTON ================= */
 async function calculateAutoResultsBtn() {
     const classId = document.getElementById("resClass").value;
     if(!classId) return alert("Select a class");
@@ -619,29 +604,19 @@ async function downloadPDF() {
         const stuSnap = await getDocs(stuQ);
         let students = [];
         stuSnap.forEach(d => { if(d.data().resultStatus) students.push(d.data()); });
-
         if(students.length === 0) { showLoader(false); return alert("Please click 'Calculate Rank' first."); }
-
-        // SORT BY REGISTER NUMBER IN PDF
         students.sort((a, b) => String(a.reg).localeCompare(String(b.reg), undefined, { numeric: true }));
 
         const markQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",classId));
         const markSnap = await getDocs(markQ);
         let marksMap = {};
-        markSnap.forEach(d => {
-            let m = d.data();
-            if(!marksMap[m.reg]) marksMap[m.reg] = {};
-            marksMap[m.reg][m.subject] = m.mark;
-        });
+        markSnap.forEach(d => { let m = d.data(); if(!marksMap[m.reg]) marksMap[m.reg] = {}; marksMap[m.reg][m.subject] = m.mark; });
 
         const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class","==",classId));
         const attSnap = await getDocs(attQ);
-        let attMap = {};
-        attSnap.forEach(d => { attMap[d.data().reg] = d.data().attendance; });
+        let attMap = {}; attSnap.forEach(d => { attMap[d.data().reg] = d.data().attendance; });
 
-        const { jsPDF } = window.jspdf; 
-        const doc = new jsPDF({ orientation: 'landscape' });
-        
+        const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'landscape' });
         let mName = document.getElementById("mname").value || "Madrasa Report";
         let mLoc = document.getElementById("mloc").value || "";
         let fullTitle = mLoc ? `${mName}, ${mLoc}` : mName;
@@ -660,12 +635,8 @@ async function downloadPDF() {
                 let mark = (marksMap[s.reg] && marksMap[s.reg][sub] !== undefined) ? marksMap[s.reg][sub] : '-';
                 row.push(mark);
             });
-            row.push(s.totalMarks || 0);
-            row.push(s.rank || '-');
-            row.push(s.grade || '-');
-            row.push(attMap[s.reg] || '-');
-            row.push(s.resultStatus || '-');
-            
+            row.push(s.totalMarks || 0); row.push(s.rank || '-'); row.push(s.grade || '-');
+            row.push(attMap[s.reg] || '-'); row.push(s.resultStatus || '-');
             tableBody.push(row);
         });
 
@@ -685,7 +656,6 @@ async function downloadPDF() {
     showLoader(false);
 }
 
-/* ================= EXCEL UPLOAD ================= */
 async function handleStudentExcel(e) {
     let cId = document.getElementById("stuClass").value;
     let sel = document.getElementById("stuClass");
@@ -706,22 +676,42 @@ async function handleStudentExcel(e) {
             
             if(rows.length === 0) { showLoader(false); return alert("Excel file is empty!"); }
             
-            showLoader(true, `Uploading ${rows.length} students...`);
+            showLoader(true, `Processing ${rows.length} students...`);
+            
+            // നിലവിലുള്ള കുട്ടികളെ എടുക്കുന്നു (ഡ്യൂപ്ലിക്കേറ്റ് ഒഴിവാക്കാൻ)
+            const existingQ = query(collection(db, "madrasas", mid, "students"), where("class","==",cId));
+            const existingSnap = await getDocs(existingQ);
+            let existingStudents = {};
+            existingSnap.forEach(d => { existingStudents[String(d.data().reg).trim()] = d.id; });
+
             const batch = writeBatch(db);
             let count = 0;
+            let updateCount = 0;
 
             for(let row of rows) {
                 let rNo = row['RegNo'] || row['regno'] || row['Reg'] || row['reg'];
                 let sName = row['Name'] || row['name'];
+                
                 if(rNo && sName) {
-                    let docRef = doc(collection(db, "madrasas", mid, "students"));
-                    batch.set(docRef, { class:cId, className: cName, reg: String(rNo).trim(), name: String(sName).trim() });
-                    count++;
+                    rNo = String(rNo).trim();
+                    sName = String(sName).trim();
+                    
+                    if(existingStudents[rNo]) {
+                        // നേരത്തെ ഉണ്ടെങ്കിൽ പേര് മാത്രം അപ്ഡേറ്റ് ചെയ്യും (No duplicate)
+                        let docRef = doc(db, "madrasas", mid, "students", existingStudents[rNo]);
+                        batch.update(docRef, { name: sName });
+                        updateCount++;
+                    } else {
+                        // പുതിയ കുട്ടിയാണെങ്കിൽ ആഡ് ചെയ്യും
+                        let docRef = doc(collection(db, "madrasas", mid, "students"));
+                        batch.set(docRef, { class:cId, className: cName, reg: rNo, name: sName });
+                        count++;
+                    }
                 }
             }
-            if(count > 0) {
+            if(count > 0 || updateCount > 0) {
                 await batch.commit();
-                alert(`${count} students uploaded successfully!`);
+                alert(`${count} പുതിയ കുട്ടികളെ ആഡ് ചെയ്തു, ${updateCount} കുട്ടികളെ അപ്ഡേറ്റ് ചെയ്തു!`);
                 loadStudents();
             } else { alert("No valid columns found. Please ensure columns are 'RegNo' and 'Name'."); }
         } catch (err) { alert("Error reading Excel: " + err.message); }
@@ -735,36 +725,32 @@ async function handleMarksExcel(e) {
     let mClass = document.getElementById("markClass").value;
     let sel = document.getElementById("markClass");
     if(!mClass) { e.target.value = ""; return alert("Please select a class first!"); }
-    
     let cName = sel.options[sel.selectedIndex].text;
-    const file = e.target.files[0];
-    if(!file) return;
+    const file = e.target.files[0]; if(!file) return;
 
     showLoader(true, "Reading Marks Excel...");
     const reader = new FileReader();
     reader.onload = async (evt) => {
         try {
-            const data = evt.target.result;
-            const workbook = XLSX.read(data, {type: 'binary'});
-            const firstSheet = workbook.SheetNames[0];
-            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
-            
+            const data = evt.target.result; const workbook = XLSX.read(data, {type: 'binary'});
+            const firstSheet = workbook.SheetNames[0]; const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
             if(rows.length === 0) { showLoader(false); return alert("Excel file is empty!"); }
-            
             showLoader(true, "Uploading Marks... This may take a moment.");
             
             const q = query(collection(db, "madrasas", mid, "subjects"), where("class","==",mClass));
             const subSnap = await getDocs(q);
-            let validSubjects = [];
-            subSnap.forEach(d => validSubjects.push(d.data().subject.toLowerCase().trim()));
+            let validSubjects = []; subSnap.forEach(d => validSubjects.push(d.data().subject.toLowerCase().trim()));
 
-            const batch = writeBatch(db);
-            let count = 0;
+            const existingMarksQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",mClass));
+            const existingMarksSnap = await getDocs(existingMarksQ);
+            let existingMarksMap = {}; 
+            existingMarksSnap.forEach(d => { let mData = d.data(); let mapKey = String(mData.reg).trim() + "_" + String(mData.subject).toLowerCase().trim(); existingMarksMap[mapKey] = d.id; });
+
+            const batch = writeBatch(db); let count = 0;
 
             for(let row of rows) {
                 let rNo = row['RegNo'] || row['regno'] || row['Reg'] || row['reg'];
-                if(!rNo) continue;
-                rNo = String(rNo).trim();
+                if(!rNo) continue; rNo = String(rNo).trim();
 
                 Object.keys(row).forEach(key => {
                     let subKey = key.toLowerCase().trim();
@@ -773,22 +759,27 @@ async function handleMarksExcel(e) {
                         if(markVal !== "" && markVal !== null && markVal !== undefined) {
                             let markToSave = isNaN(markVal) ? String(markVal).toUpperCase() : Number(markVal);
                             let actualSubName = subSnap.docs.find(d => d.data().subject.toLowerCase().trim() === subKey).data().subject;
-                            let docRef = doc(collection(db, "madrasas", mid, "marks"));
-                            batch.set(docRef, { class: mClass, className: cName, reg: rNo, subject: actualSubName, mark: markToSave });
+                            let mapKey = rNo + "_" + subKey;
+                            
+                            if (existingMarksMap[mapKey]) {
+                                let docRef = doc(db, "madrasas", mid, "marks", existingMarksMap[mapKey]);
+                                batch.update(docRef, { mark: markToSave });
+                            } else {
+                                let docRef = doc(collection(db, "madrasas", mid, "marks"));
+                                batch.set(docRef, { class: mClass, className: cName, reg: rNo, subject: actualSubName, mark: markToSave });
+                            }
                             count++;
                         }
                     }
                 });
             }
             if(count > 0) {
-                await batch.commit();
-                await processRankCalculation(mClass);
+                await batch.commit(); await processRankCalculation(mClass); 
                 alert(`${count} mark entries uploaded successfully! Rank updated.`);
                 document.getElementById("markClass").dispatchEvent(new Event('change'));
             } else { alert("No valid marks found. Ensure column names match Subject names exactly."); }
         } catch (err) { alert("Error reading Excel: " + err.message); }
-        e.target.value = "";
-        showLoader(false);
+        e.target.value = ""; showLoader(false);
     };
     reader.readAsBinaryString(file);
 }

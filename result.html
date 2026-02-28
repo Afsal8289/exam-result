@@ -240,156 +240,178 @@ tr:nth-child(even) { background: #fcfcfc; }
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-const app = initializeApp({
-  apiKey: "AIzaSyDyyTKs5JVvTScGO3vdfOJBX7DCjv-M8ZQ",
-  authDomain: "madrasa-exam-result.firebaseapp.com",
-  projectId: "madrasa-exam-result",
-  storageBucket: "madrasa-exam-result.firebasestorage.app",
-  messagingSenderId: "852087187745",
-  appId: "1:852087187745:web:657b0a8ffb23b44663b660"
-});
+  const app = initializeApp({
+    apiKey: "AIzaSyDyyTKs5JVvTScGO3vdfOJBX7DCjv-M8ZQ",
+    authDomain: "madrasa-exam-result.firebaseapp.com",
+    projectId: "madrasa-exam-result",
+    storageBucket: "madrasa-exam-result.firebasestorage.app",
+    messagingSenderId: "852087187745",
+    appId: "1:852087187745:web:657b0a8ffb23b44663b660"
+  });
 
-const db = getFirestore(app);
+  const db = getFirestore(app);
 
-const params = new URLSearchParams(location.search);
-const mid = params.get("mid");
-const cls = params.get("class");
-const reg = params.get("reg");
+  const urlParams = new URLSearchParams(window.location.search);
+  const mid = urlParams.get("mid");
+  const cls = urlParams.get("class");
+  const reg = urlParams.get("reg");
 
-async function loadResult(){
-  if(!mid || !cls || !reg) {
-      alert("Invalid Result Link");
-      history.back();
-      return;
-  }
+  // --- എറർ വരാതിരിക്കാനുള്ള സുരക്ഷാ കോഡുകൾ (Null Check Helpers) ---
+  const setTxt = (id, text) => { let el = document.getElementById(id); if(el) el.innerText = text; };
+  const setHtml = (id, html) => { let el = document.getElementById(id); if(el) el.innerHTML = html; };
+  const setDisplay = (id, val) => { let el = document.getElementById(id); if(el) el.style.display = val; };
+  const setClick = (id, fn) => { let el = document.getElementById(id); if(el) el.onclick = fn; };
 
-  try {
-      const madSnap = await getDoc(doc(db, "madrasas", mid));
-      if(!madSnap.exists()){
-        alert("Invalid Madrasa ID");
-        history.back();
-        return;
-      }
-      
-      const madData = madSnap.data();
-      document.getElementById("madName").innerText = madData.name || "Madrasa Exam Result";
-      
-      if(madData.location) {
-          document.getElementById("madLoc").innerText = madData.location;
-      } else {
-          document.getElementById("madLoc").style.display = "none";
-      }
+  window.onload = () => {
+      if(!cls || !reg) { setDisplay("overlay", "none"); loadClasses(); return; }
+      loadResult();
+  };
 
-      if(madData.isPublished === false) {
-          document.getElementById("overlay").style.display = "none";
-          document.getElementById("comingSoonCard").style.display = "block";
-          document.getElementById("buttonsBox").style.display = "flex";
-          document.querySelector(".btn-download").style.display = "none"; 
+  async function loadClasses() {
+      if(!mid) {
+          if(document.body) document.body.innerHTML = "<h3 style='text-align:center; padding:50px;'>Invalid Link</h3>";
           return;
       }
-
-      const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",cls), where("reg","==",reg));
-      const stuSnap = await getDocs(stuQ);
-
-      if(stuSnap.empty){
-        alert("Result not found for this Register Number!");
-        history.back();
-        return;
-      }
-
-      const stu = stuSnap.docs[0].data();
-      document.getElementById("sName").innerText = stu.name;
-      document.getElementById("sReg").innerText = reg;
-      document.getElementById("sClass").innerText = stu.className || cls;
-      
-      document.getElementById("sRank").innerText = stu.rank || "-";
-      document.getElementById("sGrade").innerText = stu.grade || "-";
-      document.getElementById("sTotal").innerText = stu.totalMarks || "0";
-
-      const statusEl = document.getElementById("sStatus");
-      let statusStr = stu.resultStatus || "-";
-      statusEl.innerText = statusStr;
-      
-      statusEl.className = ""; 
-      if(statusStr === "PASSED") statusEl.classList.add("status-pass");
-      else if(statusStr === "PROMOTED") statusEl.classList.add("status-promoted");
-      else statusEl.classList.add("status-fail");
-
-      const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class","==",cls), where("reg","==",reg));
-      const attSnap = await getDocs(attQ);
-      document.getElementById("sAtt").innerText = attSnap.empty ? "-" : attSnap.docs[0].data().attendance;
-
-      const subQ = query(collection(db, "madrasas", mid, "subjects"), where("class","==",cls));
-      const subSnap = await getDocs(subQ);
-      let subjects = [];
-      subSnap.forEach(d => subjects.push(d.data()));
-      subjects.sort((a,b)=> (a.createdAt||0) - (b.createdAt||0)); 
-
-      const markQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",cls), where("reg","==",reg));
-      const markSnap = await getDocs(markQ);
-      let marksMap = {};
-      markSnap.forEach(d => {
-          let m = d.data();
-          marksMap[m.subject] = m.mark;
-      });
-
-      const marksTbody = document.getElementById("marks");
-      marksTbody.innerHTML = "";
-      
-      subjects.forEach(s => {
-          let markVal = marksMap[s.subject] !== undefined ? marksMap[s.subject] : "-";
-          marksTbody.innerHTML += `
-            <tr>
-              <td>${s.subject}</td>
-              <td style="text-align: center; font-weight: 700;">${markVal}</td>
-            </tr>
-          `;
-      });
-
-      document.getElementById("overlay").style.display = "none";
-      document.getElementById("resultCard").style.display = "block";
-      document.getElementById("buttonsBox").style.display = "flex";
-
-  } catch (error) {
-      console.error(error);
-      alert("Something went wrong! Please try again later.");
-      document.getElementById("overlay").style.display = "none";
+      try {
+          const madSnap = await getDoc(doc(db, "madrasas", mid));
+          if(madSnap.exists()){
+              setTxt("madName", madSnap.data().name);
+              setTxt("madLoc", madSnap.data().location || "");
+              if(madSnap.data().isPublished === false) {
+                  setDisplay("searchBox", "none");
+                  setDisplay("comingSoonCard", "block");
+                  return;
+              }
+          }
+          const q = query(collection(db, "madrasas", mid, "classes"));
+          const snap = await getDocs(q);
+          const sel = document.getElementById("classSelect");
+          if(sel) {
+              snap.forEach(d => { sel.innerHTML += `<option value="${d.id}">${d.data().name}</option>`; });
+          }
+      } catch (e) { console.error(e); }
   }
-}
 
-loadResult();
-
-window.downloadPDF = function() {
-  const element = document.getElementById("resultCard");
-  
-  // PDF Settings optimized for mobile rendering
-  const opt = {
-      margin:       [10, 10, 10, 10], // top, left, bottom, right
-      filename:     `Result_${reg}.pdf`,
-      image:        { type: 'jpeg', quality: 1 },
-      html2canvas:  { 
-          scale: 2, 
-          useCORS: true, 
-          scrollY: 0, 
-          windowWidth: document.documentElement.offsetWidth 
-      },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-  
-  // Temporary styles to remove shadow for clear printing
-  element.style.boxShadow = 'none';
-  element.style.border = '1px solid #ccc';
-  
-  html2pdf().set(opt).from(element).save().then(() => {
-      // Revert styles
-      element.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.05)';
-      element.style.border = '1px solid #e2e8f0';
+  setClick("searchBtn", () => {
+      let c = document.getElementById("classSelect") ? document.getElementById("classSelect").value : "";
+      let r = document.getElementById("regInput") ? document.getElementById("regInput").value : "";
+      if(!c || !r) return alert("Select class and enter Reg No");
+      window.location.href = `?mid=${mid}&class=${c}&reg=${r}`;
   });
-}
-</script>
 
-</body>
-</html>
+  async function loadResult(){
+      if(!mid || !cls || !reg) { alert("Invalid Result Link"); history.back(); return; }
+
+      try {
+          const madSnap = await getDoc(doc(db, "madrasas", mid));
+          if(!madSnap.exists()){ alert("Invalid Madrasa ID"); history.back(); return; }
+          const madData = madSnap.data();
+
+          if(madData.expiryDate) {
+              let today = new Date().toISOString().split("T")[0];
+              if(today > madData.expiryDate) {
+                  setDisplay("overlay", "none");
+                  const soonCard = document.getElementById("comingSoonCard");
+                  if(soonCard) {
+                      soonCard.innerHTML = `<div class="icon-wrapper" style="background:#fee2e2;"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i></div><h2 style="color:#ef4444;">Subscription Expired</h2><p>ഈ മദ്റസയുടെ സോഫ്റ്റ്‌വെയർ കാലാവധി കഴിഞ്ഞിരിക്കുന്നു. റിസൾട്ട് ലഭ്യമാകാൻ ദയവായി അഡ്മിനുമായി ബന്ധപ്പെടുക.</p>`;
+                      setDisplay("comingSoonCard", "block");
+                  }
+                  setDisplay("searchBox", "none");
+                  return;
+              }
+          }
+
+          setTxt("madName", madData.name || "Madrasa Exam Result");
+          if(madData.location) setTxt("madLoc", madData.location);
+          else setDisplay("madLoc", "none");
+
+          if(madData.isPublished === false) {
+              setDisplay("overlay", "none");
+              setDisplay("comingSoonCard", "block");
+              return;
+          }
+
+          const classSnap = await getDoc(doc(db, "madrasas", mid, "classes", cls));
+          let subjectList = [];
+          if(classSnap.exists()) { subjectList = classSnap.data().subjectList || []; }
+
+          const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",cls), where("reg","==",reg));
+          const stuSnap = await getDocs(stuQ);
+
+          if(stuSnap.empty) {
+              setDisplay("overlay", "none");
+              setDisplay("notFoundCard", "block");
+              return;
+          }
+
+          const studentData = stuSnap.docs[0].data();
+          const marksMap = studentData.marksMap || {}; 
+          
+          setTxt("stuName", studentData.name);
+          setTxt("stuReg", studentData.reg);
+          setTxt("className", studentData.className || "Class");
+
+          let tableHtml = "";
+          let hasPassed = (studentData.resultStatus === "PASSED" || studentData.resultStatus === "PROMOTED");
+          
+          if(subjectList.length > 0) {
+              subjectList.forEach(subName => {
+                  let markVal = marksMap[subName] !== undefined ? marksMap[subName] : '-';
+                  let markClass = (markVal === 'A' || markVal === 'AB' || (typeof markVal === 'number' && markVal < madData.passmark)) ? 'fail-mark' : '';
+                  tableHtml += `<tr><td>${subName}</td><td class="mark-val ${markClass}">${markVal}</td></tr>`;
+              });
+          } else {
+              Object.keys(marksMap).forEach(subName => {
+                  let markVal = marksMap[subName];
+                  let markClass = (markVal === 'A' || markVal === 'AB' || (typeof markVal === 'number' && markVal < madData.passmark)) ? 'fail-mark' : '';
+                  tableHtml += `<tr><td>${subName}</td><td class="mark-val ${markClass}">${markVal}</td></tr>`;
+              });
+          }
+
+          setHtml("marksTableBody", tableHtml);
+
+          let totalValue = studentData.totalMarks || 0;
+          setTxt("totalMarks", totalValue);
+          
+          let rankValue = studentData.rank || "-";
+          let gradeValue = studentData.grade || "-";
+          
+          if(studentData.resultStatus === "PROMOTED") {
+               rankValue += " (Promoted)";
+               let rc = document.getElementById("rankContainer");
+               if(rc) rc.classList.add("promoted-box");
+          }
+
+          setTxt("rankVal", rankValue);
+          setTxt("gradeVal", gradeValue);
+          setTxt("attVal", studentData.attendance || "-");
+
+          let statusBadge = document.getElementById("statusBadge");
+          if(statusBadge) {
+              if(hasPassed) {
+                  statusBadge.innerText = studentData.resultStatus;
+                  statusBadge.className = "status-badge pass";
+              } else {
+                  statusBadge.innerText = "FAILED";
+                  statusBadge.className = "status-badge fail";
+                  setTxt("rankVal", "-");
+                  setTxt("gradeVal", "D");
+              }
+          }
+
+          setDisplay("overlay", "none");
+          setDisplay("resultCard", "block");
+          
+      } catch(error) {
+          console.error(error);
+          alert("Error fetching result. Please try again.");
+          setDisplay("overlay", "none");
+      }
+  }
+
+  setClick("printBtn", () => window.print());
+  setClick("backBtn", () => window.location.href = `?mid=${mid}`);
+</script>

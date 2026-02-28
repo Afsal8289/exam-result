@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
+<title>Super Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+:root { --primary: #4361ee; --primary-light: #e0e7ff; --success: #10b981; --danger: #ef4444; --bg-color: #f4f7fe; --text-dark: #1e293b; --text-muted: #64748b; }
+body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg-color); color: var(--text-dark); }
+.navbar { background: #fff; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+.navbar h2 { margin: 0; color: var(--primary); font-size: 20px; }
+.container { max-width: 1000px; margin: 30px auto; padding: 0 15px; }
+.card { background: #fff; border-radius: 15px; padding: 25px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); margin-bottom: 25px; border: 1px solid #e2e8f0; }
+h3 { margin-top: 0; color: var(--text-dark); font-size: 18px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px;}
+.form-group { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+.form-group input { flex: 1; min-width: 200px; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 14px; outline: none; }
+.form-group input:focus { border-color: var(--primary); }
+.btn { padding: 10px 18px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-family: 'Poppins', sans-serif; display: inline-flex; align-items: center; justify-content:center; gap: 8px; font-size: 13px; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: #3651d4; }
+.btn-danger { background: #fee2e2; color: var(--danger); }
+.btn-danger:hover { background: #fecaca; }
+.btn-warning { background: #f59e0b; color: #fff; }
+.btn-warning:hover { background: #d97706; }
+.btn-success { background: #10b981; color: #fff; }
+.btn-success:hover { background: #059669; }
+
+.search-box { display: flex; align-items: center; background: #fff; padding: 12px 20px; border-radius: 10px; border: 1px solid #cbd5e1; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+.search-box i { color: #94a3b8; font-size: 18px; margin-right: 15px; }
+.search-box input { border: none; outline: none; font-family: 'Poppins', sans-serif; font-size: 15px; width: 100%; color: var(--text-dark); }
+
+.madrasa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+.m-card { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02); position: relative; transition: 0.3s; display: flex; flex-direction: column;}
+.m-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); }
+
+.m-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;}
+.m-header h4 { margin: 0 0 5px; color: var(--primary); font-size: 18px; word-break: break-word;}
+.status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;}
+.badge-active { background: #d1fae5; color: #059669; }
+.badge-blocked { background: #fee2e2; color: #dc2626; }
+.badge-expired { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74;}
+
+.m-id { font-size: 13px; color: #444; margin-top: -5px; margin-bottom: 10px; font-family: monospace; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; display: inline-block; border: 1px solid #cbd5e1;}
+.m-card p { margin: 0 0 15px; color: var(--text-muted); font-size: 13px; }
+
+.link-box { background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px dashed #cbd5e1; }
+.link-box span { display: block; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 5px;}
+.link-flex { display: flex; gap: 8px; align-items: center;}
+.link-flex input[type="date"] { flex: 1; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 5px; font-size: 13px; background: #fff; color: #333; }
+
+.m-footer { display: flex; justify-content: space-between; margin-top: auto; border-top: 1px solid #f1f5f9; padding-top: 15px; gap: 10px;}
+
+#overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+.spinner { width: 40px; height: 40px; border: 4px solid var(--primary-light); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media(max-width: 600px) { .form-group { flex-direction: column; } .form-group input { width: 100%; box-sizing: border-box;} .m-footer {flex-direction: column;} }
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+  <h2><i class="fas fa-shield-alt"></i> Super Admin</h2>
+</div>
+
+<div id="overlay">
+  <div class="spinner"></div>
+  <span id="loadingText" style="font-weight:600; color:var(--primary);">Processing...</span>
+</div>
+
+<div class="container">
+  
+  <div class="card" style="border-top: 4px solid var(--primary);">
+    <h3><i class="fas fa-plus-circle"></i> Register New Madrasa</h3>
+    <div class="form-group">
+      <input type="text" id="newMId" placeholder="Madrasa ID (eg: mic_school) *" required style="border-color: #3b82f6;">
+      <input type="text" id="newMName" placeholder="Madrasa Name *" required style="border-color: #3b82f6;">
+    </div>
+    <div class="form-group">
+      <input type="text" id="newMLoc" placeholder="Location / Place (Optional)">
+      <input type="date" id="newExpiry" title="Expiry Date (Optional)">
+    </div>
+    <button class="btn btn-primary" id="createBtn" style="width: 100%; padding: 15px; font-size: 15px;"><i class="fas fa-save"></i> Create Madrasa</button>
+  </div>
+
+  <div class="card" style="background: #fffbeb; border-color: #fcd34d;">
+    <h3 style="border-bottom-color: #fde68a;"><i class="fas fa-calendar-check" style="color:#d97706;"></i> Set Global Expiry Date</h3>
+    <div class="form-group" style="margin-bottom:0;">
+      <input type="date" id="globalExpiryDate">
+      <button class="btn btn-warning" id="updateAllExpiryBtn"><i class="fas fa-sync-alt"></i> Update All Madrasas</button>
+    </div>
+  </div>
+
+  <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="searchMadrasa" placeholder="Search by Madrasa ID or Name..." onkeyup="filterMadrasas()">
+  </div>
+
+  <div class="madrasa-grid" id="madrasasList"></div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getFirestore, collection, getDocs, deleteDoc, doc, setDoc, updateDoc, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyDyyTKs5JVvTScGO3vdfOJBX7DCjv-M8ZQ",
+  authDomain: "madrasa-exam-result.firebaseapp.com",
+  projectId: "madrasa-exam-result",
+  storageBucket: "madrasa-exam-result.firebasestorage.app",
+  messagingSenderId: "852087187745",
+  appId: "1:852087187745:web:657b0a8ffb23b44663b660"
+});
+
+const db = getFirestore(app);
+
+const showLoader = (show, text="Processing...") => { 
+    document.getElementById("overlay").style.display = show ? "flex" : "none"; 
+    document.getElementById("loadingText").innerText = text;
+};
+
+async function loadMadrasas() {
+    showLoader(true, "Loading Madrasas...");
+    try {
+        const q = collection(db, "madrasas");
+        const snap = await getDocs(q);
+        const listDiv = document.getElementById("madrasasList");
+        listDiv.innerHTML = "";
+        
+        if(snap.empty) {
+            listDiv.innerHTML = "<p style='color:#666;'>No Madrasas registered yet.</p>";
+            showLoader(false); return;
+        }
+
+        let madrasasData = [];
+        snap.forEach(d => madrasasData.push({ id: d.id, ...d.data() }));
+        madrasasData.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+
+        let today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD for expiry check
+
+        madrasasData.forEach(data => {
+            let currentStatus = data.status || 'active';
+            let isExpired = false;
+
+            if (data.expiryDate && today > data.expiryDate) {
+                isExpired = true;
+            }
+
+            let statusBadge = '';
+            if (currentStatus === 'blocked') {
+                statusBadge = `<span class="status-badge badge-blocked">Blocked</span>`;
+            } else if (isExpired) {
+                statusBadge = `<span class="status-badge badge-expired">Expired</span>`;
+            } else {
+                statusBadge = `<span class="status-badge badge-active">Active</span>`;
+            }
+            
+            let toggleBtnClass = currentStatus === 'active' ? 'btn-danger' : 'btn-success';
+            let toggleBtnText = currentStatus === 'active' ? '<i class="fas fa-ban"></i> Block' : '<i class="fas fa-check-circle"></i> Unblock';
+            
+            listDiv.innerHTML += `
+            <div class="m-card" data-searchid="${String(data.id).toLowerCase()}" data-searchname="${String(data.name || '').toLowerCase()}">
+                <div class="m-header"><h4>${data.name}</h4>${statusBadge}</div>
+                <div class="m-id"><i class="fas fa-fingerprint" style="color:#94a3b8;"></i> ID: <strong>${data.id}</strong></div>
+                <p><i class="fas fa-map-marker-alt"></i> ${data.location || 'Not provided'}</p>
+                <div class="link-box" style="border-color:#fca5a5; background:#fef2f2; margin-top: auto;">
+                    <span style="color:#ef4444;"><i class="fas fa-clock"></i> Expiry Date</span>
+                    <div class="link-flex">
+                        <input type="date" id="exp_${data.id}" value="${data.expiryDate || ''}">
+                        <button class="btn btn-primary save-exp-btn" data-id="${data.id}" style="padding: 8px 15px; font-size:13px;">Save</button>
+                    </div>
+                </div>
+                <div class="m-footer">
+                    <button class="btn ${toggleBtnClass} toggle-status-btn" data-id="${data.id}" data-status="${currentStatus}" style="flex:1;">${toggleBtnText}</button>
+                    <button class="btn delete-m-btn" data-id="${data.id}" data-name="${data.name}" style="background:#f1f5f9; color:#ef4444; border:1px solid #e2e8f0; width:45px;"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`;
+        });
+    } catch (error) { console.error("Error:", error); alert("Error loading data."); }
+    showLoader(false);
+}
+
+window.filterMadrasas = () => {
+    let filter = document.getElementById("searchMadrasa").value.toLowerCase();
+    let cards = document.querySelectorAll(".m-card");
+    cards.forEach(card => {
+        let id = card.getAttribute("data-searchid");
+        let name = card.getAttribute("data-searchname");
+        if(id.includes(filter) || name.includes(filter)) card.style.display = "flex"; 
+        else card.style.display = "none";
+    });
+};
+
+document.getElementById("madrasasList").addEventListener("click", async (e) => {
+    const toggleBtn = e.target.closest('.toggle-status-btn');
+    if (toggleBtn) {
+        const id = toggleBtn.getAttribute('data-id');
+        const currentStatus = toggleBtn.getAttribute('data-status');
+        const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+        if(!confirm(newStatus === 'blocked' ? "Block this Madrasa Admin Panel?" : "Unblock this Madrasa Admin Panel?")) return;
+        showLoader(true, "Updating status...");
+        try { await updateDoc(doc(db, "madrasas", id), { status: newStatus }); loadMadrasas(); } 
+        catch(error) { alert("Error: " + error.message); showLoader(false);}
+        return;
+    }
+
+    const deleteBtn = e.target.closest('.delete-m-btn');
+    if (deleteBtn) {
+        const id = deleteBtn.getAttribute('data-id');
+        const name = deleteBtn.getAttribute('data-name');
+        
+        let confirmDel = prompt(`WARNING: Are you sure you want to completely delete ${name}? \nThis will permanently remove ALL students, marks, classes, and settings from the database.\n\nType 'DELETE' to confirm.`);
+        if(confirmDel === "DELETE") {
+            showLoader(true, "Deleting all data... Please wait.");
+            try {
+                const subCollections = ['classes', 'subjects', 'students', 'marks', 'attendance'];
+                for (let subCol of subCollections) {
+                    const subSnap = await getDocs(collection(db, "madrasas", id, subCol));
+                    const deletePromises = [];
+                    subSnap.forEach(d => { deletePromises.push(deleteDoc(d.ref)); });
+                    await Promise.all(deletePromises); 
+                }
+                await deleteDoc(doc(db, "madrasas", id));
+                alert("Madrasa and ALL associated data completely deleted!");
+                loadMadrasas();
+            } catch(error) { alert("Error deleting data: " + error.message); showLoader(false); }
+        }
+        return;
+    }
+
+    const saveExpBtn = e.target.closest('.save-exp-btn');
+    if (saveExpBtn) {
+        const id = saveExpBtn.getAttribute('data-id');
+        const newDate = document.getElementById(`exp_${id}`).value;
+        showLoader(true, "Saving...");
+        try { await updateDoc(doc(db, "madrasas", id), { expiryDate: newDate }); alert("Expiry Date Updated!"); loadMadrasas(); } 
+        catch(error) { alert("Error: " + error.message); }
+        showLoader(false); return;
+    }
+});
+
+document.getElementById("updateAllExpiryBtn").onclick = async () => {
+    const newDate = document.getElementById("globalExpiryDate").value;
+    if(!newDate) return alert("Please select a global expiry date first.");
+    if(!confirm("Change expiry date for ALL madrasas?")) return;
+    showLoader(true, "Updating all madrasas...");
+    try {
+        const snap = await getDocs(collection(db, "madrasas"));
+        const batch = writeBatch(db);
+        snap.forEach(d => batch.update(doc(db, "madrasas", d.id), { expiryDate: newDate }));
+        await batch.commit();
+        alert("Successfully updated expiry date for ALL Madrasas!"); loadMadrasas();
+    } catch(error) { alert("Error: " + error.message); }
+    showLoader(false);
+}
+
+document.getElementById("createBtn").onclick = async () => {
+    let rawId = document.getElementById("newMId").value.trim().toLowerCase();
+    let mId = rawId.replace(/[^a-z0-9_]/g, '_'); 
+    const mName = document.getElementById("newMName").value.trim();
+    const mLoc = document.getElementById("newMLoc").value.trim();
+    const expiry = document.getElementById("newExpiry").value;
+
+    if(!mId || !mName) return alert("Madrasa ID and Name are required!");
+    showLoader(true, "Creating Madrasa...");
+    try {
+        const docRef = doc(db, "madrasas", mId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) { showLoader(false); return alert("Error: This Madrasa ID already exists!"); }
+
+        await setDoc(docRef, { name: mName, location: mLoc, passmark: 40, isPublished: false, expiryDate: expiry || null, status: 'active', createdAt: Date.now() });
+        
+        document.getElementById("newMId").value = ""; document.getElementById("newMName").value = "";
+        document.getElementById("newMLoc").value = ""; document.getElementById("newExpiry").value = "";
+        document.getElementById("searchMadrasa").value = ""; 
+        alert("New Madrasa Created Successfully!"); loadMadrasas();
+    } catch(error) { alert("Failed to create Madrasa: " + error.message); showLoader(false); }
+}
+
+loadMadrasas();
+</script>
+</body>
+</html>
