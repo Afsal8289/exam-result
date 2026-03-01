@@ -260,8 +260,9 @@ document.getElementById("updateAllExpiryBtn").onclick = async () => {
 }
 
 document.getElementById("createBtn").onclick = async () => {
-    let rawId = document.getElementById("newMId").value.trim().toLowerCase();
-    let mId = rawId.replace(/[^a-z0-9_]/g, '_'); 
+    let rawId = document.getElementById("newMId").value.trim();
+// ഈ പുതിയ കോഡ് വലിയ അക്ഷരങ്ങളും (A-Z) ചെറിയ അക്ഷരങ്ങളും (a-z) അക്കങ്ങളും (0-9) സപ്പോർട്ട് ചെയ്യും
+let mId = rawId.replace(/[^a-zA-Z0-9_]/g, '_'); 
     const mName = document.getElementById("newMName").value.trim();
     const mLoc = document.getElementById("newMLoc").value.trim();
     const expiry = document.getElementById("newExpiry").value;
@@ -285,4 +286,5 @@ document.getElementById("createBtn").onclick = async () => {
 loadMadrasas();
 </script>
 </body>
+
 </html>
