@@ -55,6 +55,7 @@ function attachEventListeners() {
     document.getElementById("downloadPdfBtn").onclick = downloadPDF;
     document.getElementById("studentsExcel").addEventListener('change', handleStudentExcel);
     document.getElementById("marksExcel").addEventListener('change', handleMarksExcel);
+    document.getElementById("downloadLabelsBtn").onclick = downloadDeskLabels;
 }
 
 async function logoutAdmin() {
@@ -250,7 +251,6 @@ async function addStudent() {
       await updateDoc(doc(db, "madrasas", mid, "students", editingStudentId), { reg: r, name: n });
       editingStudentId = null; document.getElementById("addStuBtn").innerText = "Add";
   } else {
-      // ഡ്യൂപ്ലിക്കേറ്റ് ചെക്ക് ചെയ്യുന്ന പുതിയ കോഡ്
       const q = query(collection(db, "madrasas", mid, "students"), where("class","==",cId), where("reg","==",r));
       const snap = await getDocs(q);
       if(!snap.empty) {
@@ -398,7 +398,7 @@ async function processRankCalculation(classId) {
         totalMaxMarksPossible += s.data().maxMarks ? Number(s.data().maxMarks) : 100;
     });
     sortSubjects(subjectsData);
-    let subjectNames = subjectsData.map(s => s.subject); // Array of subjects
+    let subjectNames = subjectsData.map(s => s.subject); 
     
     // Save to Class doc so result page can read it in 1 request
     await updateDoc(doc(db, "madrasas", mid, "classes", classId), { subjectList: subjectNames });
@@ -678,7 +678,6 @@ async function handleStudentExcel(e) {
             
             showLoader(true, `Processing ${rows.length} students...`);
             
-            // നിലവിലുള്ള കുട്ടികളെ എടുക്കുന്നു (ഡ്യൂപ്ലിക്കേറ്റ് ഒഴിവാക്കാൻ)
             const existingQ = query(collection(db, "madrasas", mid, "students"), where("class","==",cId));
             const existingSnap = await getDocs(existingQ);
             let existingStudents = {};
@@ -697,12 +696,10 @@ async function handleStudentExcel(e) {
                     sName = String(sName).trim();
                     
                     if(existingStudents[rNo]) {
-                        // നേരത്തെ ഉണ്ടെങ്കിൽ പേര് മാത്രം അപ്ഡേറ്റ് ചെയ്യും (No duplicate)
                         let docRef = doc(db, "madrasas", mid, "students", existingStudents[rNo]);
                         batch.update(docRef, { name: sName });
                         updateCount++;
                     } else {
-                        // പുതിയ കുട്ടിയാണെങ്കിൽ ആഡ് ചെയ്യും
                         let docRef = doc(collection(db, "madrasas", mid, "students"));
                         batch.set(docRef, { class:cId, className: cName, reg: rNo, name: sName });
                         count++;
@@ -782,4 +779,92 @@ async function handleMarksExcel(e) {
         e.target.value = ""; showLoader(false);
     };
     reader.readAsBinaryString(file);
+}
+
+// ==== DESK LABELS PDF GENERATION ====
+async function downloadDeskLabels() {
+    const classId = document.getElementById("resClass").value;
+    let sel = document.getElementById("resClass");
+    if(!classId) return alert("Please select a class first!");
+    
+    const cNameText = sel.options[sel.selectedIndex].text;
+    showLoader(true, "Generating Desk Labels...");
+
+    try {
+        const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",classId));
+        const stuSnap = await getDocs(stuQ);
+        let students = [];
+        stuSnap.forEach(d => students.push(d.data()));
+
+        if(students.length === 0) {
+            showLoader(false);
+            return alert("No students found in this class.");
+        }
+
+        students.sort((a, b) => String(a.reg).localeCompare(String(b.reg), undefined, { numeric: true }));
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+        const boxWidth = 62;
+        const boxHeight = 38;
+        const gapX = 5; 
+        const gapY = 8; 
+
+        // പേപ്പറിന്റെ നടുവിലായി വരുന്നതിന് കണക്കുകൂട്ടുന്ന പുതിയ കോഡ്
+        const pageWidth = doc.internal.pageSize.getWidth(); 
+        const totalContentWidth = (boxWidth * 3) + (gapX * 2);
+        const marginX = (pageWidth - totalContentWidth) / 2; 
+        const marginY = 15; 
+
+        let col = 0; let row = 0;
+        const maxCols = 3; 
+
+        students.forEach((s, index) => {
+            if (col >= maxCols) { col = 0; row++; }
+            if (row >= 6) { doc.addPage(); col = 0; row = 0; }
+
+            let x = marginX + (col * (boxWidth + gapX));
+            let y = marginY + (row * (boxHeight + gapY));
+
+            doc.setDrawColor(0);
+            doc.setLineWidth(0.4);
+            doc.rect(x, y, boxWidth, boxHeight);
+
+            // 1. Name 
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Name:", x + 4, y + 10);
+
+            // കുട്ടിയുടെ പേര് 
+            doc.setFont("helvetica", "normal");
+            let nameLines = doc.splitTextToSize(s.name, boxWidth - 22);
+            doc.text(nameLines, x + 18, y + 10);
+
+            let nextY = y + 10 + ((nameLines.length - 1) * 5) + 9;
+
+            // 2. Class
+            doc.setFont("helvetica", "bold");
+            doc.text("Class:", x + 4, nextY);
+            doc.setFont("helvetica", "normal");
+            doc.text(cNameText, x + 18, nextY);
+
+            // 3. Reg. No
+            nextY += 9;
+            doc.setFont("helvetica", "bold");
+            doc.text("Reg. No:", x + 4, nextY);
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            doc.text(String(s.reg), x + 23, nextY);
+
+            col++;
+        });
+
+        doc.save(`Desk_Labels_${cNameText}.pdf`);
+    } catch (e) {
+        console.error(e);
+        alert("Error generating PDF: " + e.message);
+    }
+    showLoader(false);
 }

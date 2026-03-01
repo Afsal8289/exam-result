@@ -236,6 +236,11 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
             <button class="success" id="calcRankBtn">1. Calculate Rank & Grade</button>
             <button id="downloadPdfBtn">2. Download PDF</button>
           </div>
+          
+          <div class="row" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
+              <button class="warning" id="downloadLabelsBtn"><i class="fas fa-print"></i> Download Desk Labels (3x6)</button>
+          </div>
+          
         </div>
     </div>
 
@@ -243,20 +248,17 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
 
 <script>
     function openTab(evt, tabId) {
-        // Hide all elements with class="tab-content"
         let tabContents = document.getElementsByClassName("tab-content");
         for (let i = 0; i < tabContents.length; i++) {
             tabContents[i].style.display = "none";
             tabContents[i].classList.remove("active");
         }
 
-        // Remove the class "active" from all elements with class="tab-btn"
         let tabBtns = document.getElementsByClassName("tab-btn");
         for (let i = 0; i < tabBtns.length; i++) {
             tabBtns[i].classList.remove("active");
         }
 
-        // Show the current tab, and add an "active" class to the button that opened the tab
         document.getElementById(tabId).style.display = "block";
         document.getElementById(tabId).classList.add("active");
         evt.currentTarget.classList.add("active");
