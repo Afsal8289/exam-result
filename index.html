@@ -4,165 +4,236 @@
   <meta charset="UTF-8">
   <meta name="google-adsense-account" content="ca-pub-8490206815383590">
   <title>Madrasa Exam Result</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="data:,">
   
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8490206815383590" crossorigin="anonymous"></script>
 
   <style>
-    /* --- Modern UI Styles --- */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+    /* --- COMPACT & PREMIUM AESTHETIC FOR MOBILE --- */
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: 'Poppins', Arial, sans-serif;
-      background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-      color: #333;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
-    }
-    .main-wrapper {
-      flex: 1;
-      display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 10px;
+      color: #0f172a;
     }
+
+    .main-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    /* Smooth Fade In Animation */
+    @keyframes fadeInScale {
+      0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
     .card {
+      background: #ffffff;
       width: 100%;
       max-width: 420px;
-      background: #fff;
-      padding: 30px 25px;
-      border-radius: 24px;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.08);
-      position: relative;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0,0,0,0.05);
       overflow: hidden;
+      animation: fadeInScale 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    /* Top Accent Line */
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 6px;
-      background: linear-gradient(90deg, #007bff, #00c6ff);
-    }
-    .header-text {
+
+    /* Vibrant Header with Pattern */
+    .header-bg {
+      background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+      color: #ffffff;
+      padding: 30px 20px 35px;
       text-align: center;
-      margin-bottom: 25px;
-    }
-    h2 {
-      margin: 0;
-      font-size: 22px;
-      color: #1e293b;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .subtitle {
-      display: block;
-      font-size: 13px;
-      color: #64748b;
-      margin-top: 5px;
-    }
-    .input-group {
-      margin-bottom: 18px;
       position: relative;
+      z-index: 1;
     }
+
+    .header-bg::before {
+      content: ''; position: absolute; top: -20px; left: -20px;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+      z-index: -1;
+    }
+    .header-bg::after {
+      content: ''; position: absolute; bottom: -30px; right: -10px;
+      width: 100px; height: 100px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      z-index: -1;
+    }
+
+    .m-icon {
+      font-size: 26px;
+      color: #c7d2fe;
+      margin-bottom: 8px;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .m-name {
+      margin: 0 0 6px 0;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.3;
+      letter-spacing: -0.5px;
+      /* Allows full name to wrap without dots */
+      white-space: normal;
+      word-wrap: break-word; 
+    }
+
+    .subtitle {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #ffffff;
+      padding: 4px 12px;
+      border-radius: 15px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(255,255,255,0.3);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* Main Content Wrapper */
+    .content-area {
+      padding: 20px;
+      background: #ffffff;
+      border-radius: 20px 20px 0 0;
+      margin-top: -20px; 
+      position: relative;
+      z-index: 2;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+    
     .input-group label {
       display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: #475569;
-      margin-bottom: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
+    
     .input-wrapper {
       position: relative;
     }
+    
     .input-wrapper i {
       position: absolute;
       left: 14px;
       top: 50%;
       transform: translateY(-50%);
       color: #94a3b8;
-      font-size: 16px;
+      font-size: 14px;
     }
+    
     input, select {
       width: 100%;
-      padding: 14px 14px 14px 42px;
+      padding: 12px 14px 12px 38px;
       border-radius: 12px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid #e2e8f0;
       background: #f8fafc;
-      font-size: 14px;
+      font-size: 13px;
       font-family: inherit;
-      color: #334155;
+      font-weight: 600;
+      color: #1e293b;
       box-sizing: border-box;
-      transition: all 0.3s ease;
-      appearance: none; /* Removes default select arrow for custom styling */
+      transition: all 0.2s ease;
+      appearance: none; 
     }
-    /* Custom Select Arrow */
+
+    input::placeholder { color: #94a3b8; font-weight: 500; }
+    
     select {
       background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E");
       background-repeat: no-repeat;
-      background-position: right 15px top 50%;
-      background-size: 12px auto;
+      background-position: right 14px top 50%;
+      background-size: 10px auto;
     }
+    
     input:focus, select:focus {
       outline: none;
-      border-color: #007bff;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+      border-color: #3b82f6;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
+
+    #loaderText { 
+      color: #f59e0b; font-size: 11px; font-weight: 700; margin-top: 6px; display: none; 
+    }
+
+    /* Buttons */
     .btn-group {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-top: 25px;
+      gap: 10px;
+      margin-top: 20px;
     }
+    
     button {
       width: 100%;
       padding: 14px;
       border: none;
       border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
       font-family: inherit;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    button:active { transform: scale(0.98); }
-    .view {
-      background: #007bff;
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.25);
+
+    .view { 
+      background: #1e293b; color: #ffffff; 
+      box-shadow: 0 4px 10px rgba(30, 41, 59, 0.2); 
     }
-    .view:hover { background: #0069d9; }
-    .admin {
-      background: #e2e8f0;
-      color: #475569;
+    .view:hover { 
+      background: #0f172a; box-shadow: 0 4px 12px rgba(30, 41, 59, 0.3); transform: translateY(-1px);
     }
-    .admin:hover { background: #cbd5e1; }
+    
+    .admin { 
+      background: #f1f5f9; color: #475569; 
+    }
+    .admin:hover { 
+      background: #e2e8f0; transform: translateY(-1px);
+    }
     
     .footer {
       text-align: center;
-      padding: 20px;
-      font-size: 13px;
+      font-size: 11px;
+      font-weight: 600;
       color: #64748b;
     }
+    
     .footer a {
       color: #64748b;
       text-decoration: none;
-      margin: 0 5px;
+      margin: 0 6px;
       transition: color 0.2s;
     }
-    .footer a:hover { color: #007bff; }
     
-    #loaderText { color: #f59e0b; font-size: 12px; font-weight: 500; margin-top: 5px; display: none; }
+    .footer a:hover { color: #3b82f6; }
   </style>
 </head>
 
@@ -170,43 +241,47 @@
 
 <div class="main-wrapper">
   <div class="card">
-    <div class="header-text">
-      <h2 id="mname">Madrasa Exam Result</h2>
-      <span class="subtitle">Student Result Portal</span>
+    
+    <div class="header-bg">
+      <div class="m-icon"><i class="fas fa-mosque"></i></div>
+      <h2 class="m-name" id="mname">Madrasa Exam Result</h2>
+      <span class="subtitle">Student Portal</span>
     </div>
 
-    <div class="input-group">
-      <label>Madrasa ID</label>
-      <div class="input-wrapper">
-        <i class="fas fa-id-badge"></i>
-        <input id="mid" placeholder="Enter Madrasa ID" autocomplete="off">
+    <div class="content-area">
+      <div class="input-group">
+        <label>Madrasa ID</label>
+        <div class="input-wrapper">
+          <i class="fas fa-id-badge"></i>
+          <input id="mid" placeholder="Enter Madrasa ID" autocomplete="off">
+        </div>
+        <div id="loaderText"><i class="fas fa-spinner fa-spin"></i> Fetching details...</div>
       </div>
-      <div id="loaderText"><i class="fas fa-spinner fa-spin"></i> Fetching details...</div>
-    </div>
 
-    <div class="input-group">
-      <label>Class / Division</label>
-      <div class="input-wrapper">
-        <i class="fas fa-chalkboard-user"></i>
-        <select id="cls">
-          <option value="">Enter Madrasa ID first...</option>
-        </select>
+      <div class="input-group">
+        <label>Class / Division</label>
+        <div class="input-wrapper">
+          <i class="fas fa-chalkboard-user"></i>
+          <select id="cls">
+            <option value="">Enter Madrasa ID first...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Register Number</label>
+        <div class="input-wrapper">
+          <i class="fas fa-hashtag"></i>
+          <input id="reg" placeholder="Enter Register No" autocomplete="off" oninput="this.value = this.value.toUpperCase()">
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="view" id="viewBtn"><i class="fas fa-search"></i> View Result</button>
+        <button class="admin" id="adminBtn"><i class="fas fa-user-shield"></i> Admin Login</button>
       </div>
     </div>
-
-    <div class="input-group">
-      <label>Register Number</label>
-      <div class="input-wrapper">
-        <i class="fas fa-hashtag"></i>
-        <input id="reg" placeholder="Enter Register No" style="text-transform:uppercase" autocomplete="off">
-      </div>
-    </div>
-
-    <div class="btn-group">
-      <button class="view" id="viewBtn"><i class="fas fa-search"></i> View Result</button>
-      <button class="admin" id="adminBtn"><i class="fas fa-user-shield"></i> Admin Login</button>
-    </div>
-
+    
   </div>
 </div>
 
@@ -254,10 +329,10 @@
       const snap = await getDoc(doc(db, "madrasas", mid));
       if(snap.exists()){
         mnameTitle.innerText = snap.data().name || "Madrasa Exam Result";
-        mnameTitle.style.color = "#007bff";
+        mnameTitle.style.color = "#ffffff"; 
       } else {
         mnameTitle.innerText = "Madrasa Not Found!";
-        mnameTitle.style.color = "#dc3545";
+        mnameTitle.style.color = "#ffb3b3"; // Light red error color
         clsSelect.innerHTML = `<option value="">Invalid ID...</option>`;
         loaderText.style.display = "none";
         return;
@@ -280,7 +355,7 @@
     } catch(error) {
       console.error(error);
       mnameTitle.innerText = "Network Error!";
-      mnameTitle.style.color = "#dc3545";
+      mnameTitle.style.color = "#ffb3b3";
     }
     
     loaderText.style.display = "none";
@@ -290,15 +365,18 @@
   document.getElementById("viewBtn").addEventListener("click", function() {
     const mid = document.getElementById("mid").value.trim();
     const cls = document.getElementById("cls").value;
-    const reg = document.getElementById("reg").value.trim();
+    const rawReg = document.getElementById("reg").value;
 
-    if(mid === "" || cls === "" || reg === ""){
+    if(mid === "" || cls === "" || rawReg === ""){
       alert("Please fill all details (Madrasa ID, Class, and Register No).");
       return;
     }
 
+    // CLEAN REGISTER NUMBER: Remove all spaces & make uppercase
+    const cleanReg = rawReg.replace(/\s+/g, '').toUpperCase();
+
     // Redirect to Result Page
-    window.location.href = `result.html?mid=${encodeURIComponent(mid)}&class=${encodeURIComponent(cls)}&reg=${encodeURIComponent(reg)}`;
+    window.location.href = `result.html?mid=${encodeURIComponent(mid)}&class=${encodeURIComponent(cls)}&reg=${encodeURIComponent(cleanReg)}`;
   });
 
   // Admin Login Action

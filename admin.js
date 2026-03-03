@@ -16,6 +16,7 @@ const auth = getAuth(app);
 const mid = new URLSearchParams(window.location.search).get("mid");
 
 let globalPassMark = 40; 
+let globalExamType = "";
 let isResultPublished = false;
 let markStudentMap = {}; 
 let currentMarkSubjects = []; 
@@ -27,6 +28,9 @@ const showLoader = (show, text="") => {
 };
 
 function sortSubjects(arr) { arr.sort((a,b)=> (a.createdAt||0) - (b.createdAt||0)); }
+
+const cleanReg = (r) => r ? String(r).replace(/\s+/g, '').toUpperCase() : "";
+const cleanSub = (s) => s ? String(s).replace(/\s+/g, '').toLowerCase() : "";
 
 window.onload = async () => {
     if(!mid) return document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>Invalid Link (Madrasa ID Missing)</h2>";
@@ -91,7 +95,11 @@ async function loadSettings(){
     document.getElementById("mname").value = data.name || "";
     document.getElementById("mloc").value = data.location || "";
     document.getElementById("passmark").value = data.passmark || 40;
+    
     globalPassMark = Number(data.passmark) || 40;
+    globalExamType = data.examType || "";
+    if(document.getElementById("examTypeSelect")) document.getElementById("examTypeSelect").value = globalExamType;
+    
     document.getElementById("title").innerText = data.name || "New Madrasa Setup";
     isResultPublished = data.isPublished || false;
     updateVisibilityBtnUI();
@@ -106,11 +114,15 @@ async function loadSettings(){
 async function saveSettings() {
   let mn = document.getElementById("mname").value;
   let mp = document.getElementById("passmark").value;
+  let et = document.getElementById("examTypeSelect") ? document.getElementById("examTypeSelect").value : "";
+  
   if(!mn || !mp) return alert("Fill Name and Pass Mark.");
   await updateDoc(doc(db,"madrasas",mid),{
-    name: mn, location: document.getElementById("mloc").value, passmark: Number(mp)
+    name: mn, location: document.getElementById("mloc").value, passmark: Number(mp), examType: et
   });
+  
   globalPassMark = Number(mp);
+  globalExamType = et;
   document.getElementById("title").innerText = mn;
   alert("Settings Saved!");
 }
@@ -225,10 +237,11 @@ async function loadStudents(){
   const snap = await getDocs(q);
   let students = [];
   snap.forEach(d => students.push({ id: d.id, ...d.data() }));
-  students.sort((a, b) => String(a.reg).localeCompare(String(b.reg), undefined, { numeric: true }));
+  students.sort((a, b) => cleanReg(a.reg).localeCompare(cleanReg(b.reg), undefined, { numeric: true }));
 
   students.forEach(s => {
-    list.innerHTML += `<div class="item"><span style="font-weight:500">${s.reg} - ${s.name}</span><div class="action-btns"><button class="icon-btn edit-btn" onclick="window.editStudent('${s.id}', '${s.reg}', '${s.name}')"><i class="fas fa-pen"></i></button><button class="icon-btn delete-btn" onclick="window.delDoc('${s.id}','students')"><i class="fas fa-trash"></i></button></div></div>`;
+    // Pass s.reg into delete function
+    list.innerHTML += `<div class="item"><span style="font-weight:500">${s.reg} - ${s.name}</span><div class="action-btns"><button class="icon-btn edit-btn" onclick="window.editStudent('${s.id}', '${s.reg}', '${s.name}')"><i class="fas fa-pen"></i></button><button class="icon-btn delete-btn" onclick="window.delDoc('${s.id}', 'students', '${s.reg}', '${cId}')"><i class="fas fa-trash"></i></button></div></div>`;
   });
 }
 
@@ -241,7 +254,8 @@ async function addStudent() {
   let cId = document.getElementById("stuClass").value;
   let sel = document.getElementById("stuClass");
   let cName = sel.options[sel.selectedIndex].text;
-  let r = document.getElementById("reg").value.trim();
+  let originalR = document.getElementById("reg").value.trim();
+  let r = cleanReg(originalR); 
   let n = document.getElementById("sname").value.trim();
   
   if(!cId || !r || !n) return alert("Fill all fields");
@@ -264,24 +278,72 @@ async function addStudent() {
   showLoader(false);
 }
 
+// ==== പുതുക്കിയ Delete All Students ഫംഗ്ഷൻ ====
 async function deleteAllStudents() {
     let cId = document.getElementById("stuClass").value;
     if(!cId) return alert("Select a class");
-    if(!confirm("Are you sure you want to DELETE ALL students in this class?")) return;
-    showLoader(true);
-    const q = query(collection(db, "madrasas", mid, "students"), where("class", "==", cId));
-    const snap = await getDocs(q);
+    if(!confirm("Are you sure you want to DELETE ALL students along with their marks and attendance in this class? This cannot be undone!")) return;
+    showLoader(true, "Deleting all student data...");
+    
     const batch = writeBatch(db);
-    snap.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit(); loadStudents(); showLoader(false);
+
+    // 1. Delete Students
+    const stuQ = query(collection(db, "madrasas", mid, "students"), where("class", "==", cId));
+    const stuSnap = await getDocs(stuQ);
+    stuSnap.docs.forEach(d => batch.delete(d.ref));
+
+    // 2. Delete Marks for this class
+    const markQ = query(collection(db, "madrasas", mid, "marks"), where("class", "==", cId));
+    const markSnap = await getDocs(markQ);
+    markSnap.docs.forEach(d => batch.delete(d.ref));
+
+    // 3. Delete Attendance for this class
+    const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class", "==", cId));
+    const attSnap = await getDocs(attQ);
+    attSnap.docs.forEach(d => batch.delete(d.ref));
+
+    await batch.commit(); 
+    loadStudents(); 
+    showLoader(false);
+    alert("All students, their marks, and attendance deleted successfully.");
 }
 
-window.delDoc = async (id, col) => {
-    if(confirm("Are you sure you want to delete this?")){
-        await deleteDoc(doc(db, "madrasas", mid, col, id));
+// ==== പുതുക്കിയ Single Delete ഫംഗ്ഷൻ ====
+window.delDoc = async (id, col, regNo = null, classId = null) => {
+    let msg = "Are you sure you want to delete this?";
+    if (col === 'students') {
+        msg = "Are you sure you want to delete this student? (Their marks and attendance will also be deleted)";
+    }
+
+    if(confirm(msg)){
+        showLoader(true);
+        const batch = writeBatch(db);
+        
+        // Delete main document
+        batch.delete(doc(db, "madrasas", mid, col, id));
+
+        // If it's a student, delete their marks and attendance too
+        if (col === 'students' && regNo && classId) {
+            let cleanR = cleanReg(regNo);
+            
+            // Delete Marks
+            const markQ = query(collection(db, "madrasas", mid, "marks"), where("class", "==", classId), where("reg", "==", cleanR));
+            const markSnap = await getDocs(markQ);
+            markSnap.docs.forEach(d => batch.delete(d.ref));
+
+            // Delete Attendance
+            const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class", "==", classId), where("reg", "==", cleanR));
+            const attSnap = await getDocs(attQ);
+            attSnap.docs.forEach(d => batch.delete(d.ref));
+        }
+
+        await batch.commit();
+
         if(col === 'classes') loadClasses();
         if(col === 'subjects') loadSubjects();
         if(col === 'students') loadStudents();
+        
+        showLoader(false);
     }
 };
 
@@ -299,8 +361,8 @@ async function loadMarkRegs() {
     let q = query(collection(db, "madrasas", mid, "students"), where("class","==",mClass));
     let students = [];
     const snap = await getDocs(q);
-    snap.forEach(d => { students.push(d.data().reg); markStudentMap[d.data().reg] = d.data().name; });
-    students.sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
+    snap.forEach(d => { students.push(d.data().reg); markStudentMap[cleanReg(d.data().reg)] = d.data().name; });
+    students.sort((a, b) => cleanReg(a).localeCompare(cleanReg(b), undefined, { numeric: true }));
     students.forEach(r => markReg.innerHTML += `<option value="${r}">${r}</option>`);
 
     q = query(collection(db, "madrasas", mid, "subjects"), where("class","==",mClass));
@@ -315,12 +377,13 @@ async function loadStudentMarksForm(){
     let markInputsContainer = document.getElementById("markInputsContainer");
     
     if(!mReg || !mClass) return;
-    document.getElementById("markStuName").innerText = "Student: " + markStudentMap[mReg];
+    let cleanR = cleanReg(mReg);
+    document.getElementById("markStuName").innerText = "Student: " + markStudentMap[cleanR];
     markInputsContainer.innerHTML = "Loading..."; markInputsContainer.style.display = "block";
     document.getElementById("markListContainer").innerHTML = "";
     currentMarkStudentDocId = null;
 
-    const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",mClass), where("reg","==",mReg));
+    const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",mClass), where("reg","==",cleanR));
     const stuSnap = await getDocs(stuQ);
     let stuRank = "-"; let stuGrade = "-"; let isPromoted = false; let studentStatus = "Not Calculated";
     
@@ -331,10 +394,10 @@ async function loadStudentMarksForm(){
         isPromoted = sData.isPromoted || false; studentStatus = sData.resultStatus || "Not Calculated";
     }
 
-    const q = query(collection(db, "madrasas", mid, "marks"), where("class","==",mClass), where("reg","==",mReg));
+    const q = query(collection(db, "madrasas", mid, "marks"), where("class","==",mClass), where("reg","==",cleanR));
     const docs = await getDocs(q);
     let existingMarks = {};
-    docs.forEach(d => { existingMarks[d.data().subject] = { id: d.id, mark: d.data().mark }; });
+    docs.forEach(d => { existingMarks[cleanSub(d.data().subject)] = { id: d.id, mark: d.data().mark }; });
 
     if(currentMarkSubjects.length === 0){ markInputsContainer.innerHTML = `<p style="color:red;">No subjects found.</p>`; return; }
 
@@ -342,15 +405,16 @@ async function loadStudentMarksForm(){
     let listHtml = ""; let totalMarks = 0; let hasFailed = false;
 
     currentMarkSubjects.forEach(sub => {
-        let markVal = existingMarks[sub.subject] ? existingMarks[sub.subject].mark : '';
-        let docId = existingMarks[sub.subject] ? existingMarks[sub.subject].id : '';
+        let subK = cleanSub(sub.subject);
+        let markVal = existingMarks[subK] ? existingMarks[subK].mark : '';
+        let docId = existingMarks[subK] ? existingMarks[subK].id : '';
         let maxStr = sub.maxMarks ? `(Max:${sub.maxMarks})` : '';
         html += `<div class="subject-box"><label>${sub.subject} <small>${maxStr}</small></label><input type="text" class="bulk-mark-input" data-sub="${sub.subject}" data-docid="${docId}" value="${markVal}" placeholder="Mark/A"></div>`;
-        if(existingMarks[sub.subject]) {
-            listHtml += `<div class="item"><span>${sub.subject}</span> <b>${existingMarks[sub.subject].mark}</b></div>`;
-            if(typeof existingMarks[sub.subject].mark === 'number') {
-                totalMarks += existingMarks[sub.subject].mark;
-                if(existingMarks[sub.subject].mark < globalPassMark) hasFailed = true;
+        if(existingMarks[subK]) {
+            listHtml += `<div class="item"><span>${sub.subject}</span> <b>${existingMarks[subK].mark}</b></div>`;
+            if(typeof existingMarks[subK].mark === 'number') {
+                totalMarks += existingMarks[subK].mark;
+                if(existingMarks[subK].mark < globalPassMark) hasFailed = true;
             } else hasFailed = true; 
         }
     });
@@ -382,13 +446,11 @@ async function loadStudentMarksForm(){
     }
 }
 
-// ==== MAIN OPTIMIZATION: BUNDLING DATA FOR RESULT PAGE ====
 async function processRankCalculation(classId) {
     const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",classId));
     const stuSnap = await getDocs(stuQ);
     if(stuSnap.empty) return;
 
-    // 1. Fetch & Store Subjects List in Class Document
     const subQ = query(collection(db, "madrasas", mid, "subjects"), where("class","==",classId));
     const subSnap = await getDocs(subQ);
     let totalMaxMarksPossible = 0;
@@ -400,24 +462,22 @@ async function processRankCalculation(classId) {
     sortSubjects(subjectsData);
     let subjectNames = subjectsData.map(s => s.subject); 
     
-    // Save to Class doc so result page can read it in 1 request
     await updateDoc(doc(db, "madrasas", mid, "classes", classId), { subjectList: subjectNames });
 
-    // 2. Fetch all Marks
     const markQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",classId));
     const markSnap = await getDocs(markQ);
     let tempMarksMap = {}; 
     markSnap.forEach(d => {
         const m = d.data();
-        if(!tempMarksMap[m.reg]) tempMarksMap[m.reg] = {};
-        tempMarksMap[m.reg][m.subject] = m.mark;
+        let cReg = cleanReg(m.reg);
+        if(!tempMarksMap[cReg]) tempMarksMap[cReg] = {};
+        tempMarksMap[cReg][m.subject] = m.mark;
     });
 
-    // 3. Fetch all Attendance
     const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class","==",classId));
     const attSnap = await getDocs(attQ);
     let attMap = {};
-    attSnap.forEach(d => { attMap[d.data().reg] = d.data().attendance; });
+    attSnap.forEach(d => { attMap[cleanReg(d.data().reg)] = d.data().attendance; });
 
     let studentMarksMap = {};
     Object.keys(tempMarksMap).forEach(reg => {
@@ -434,9 +494,10 @@ async function processRankCalculation(classId) {
     let resultsArray = [];
     stuSnap.forEach(d => {
         let data = d.data();
-        let sData = studentMarksMap[data.reg] || { total: 0, hasFailed: true, marksObj: {} }; 
+        let cReg = cleanReg(data.reg);
+        let sData = studentMarksMap[cReg] || { total: 0, hasFailed: true, marksObj: {} }; 
         let isPromoted = data.isPromoted || false;
-        let studentAtt = attMap[data.reg] || "-";
+        let studentAtt = attMap[cReg] || "-";
         
         let status = sData.hasFailed ? "FAILED" : "PASSED";
         if (isPromoted) status = "PROMOTED"; 
@@ -455,14 +516,13 @@ async function processRankCalculation(classId) {
         
         resultsArray.push({ 
             docId: d.id, reg: data.reg, name: data.name, total: sData.total, status: status, grade: grade,
-            marksMapData: sData.marksObj, // Embed Marks Map
-            attendanceData: studentAtt    // Embed Attendance
+            marksMapData: sData.marksObj, 
+            attendanceData: studentAtt    
         });
     });
 
     resultsArray.sort((a, b) => b.total - a.total);
 
-    // 4. Update Student Documents with everything bundled
     const batch = writeBatch(db);
     resultsArray.forEach((res, index) => {
         res.rank = (res.status === "PASSED" || res.status === "PROMOTED") ? index + 1 : "-"; 
@@ -471,8 +531,8 @@ async function processRankCalculation(classId) {
             resultStatus: res.status, 
             rank: res.rank, 
             grade: res.grade,
-            marksMap: res.marksMapData,   // Saved directly inside student
-            attendance: res.attendanceData // Saved directly inside student
+            marksMap: res.marksMapData,   
+            attendance: res.attendanceData 
         }); 
     });
     await batch.commit();
@@ -491,13 +551,15 @@ async function saveAllMarks() {
     if(currentMarkStudentDocId) {
         batch.update(doc(db, "madrasas", mid, "students", currentMarkStudentDocId), { isPromoted: isPromoted });
     }
+    
+    let cleanR = cleanReg(document.getElementById("markReg").value);
 
     inputs.forEach(input => {
         let sub = input.getAttribute('data-sub'), docId = input.getAttribute('data-docid'), val = input.value.trim();
         if (val !== "") {
             let markToSave = isNaN(val) ? val.toUpperCase() : Number(val);
             if (docId) batch.update(doc(db, "madrasas", mid, "marks", docId), { mark: markToSave });
-            else batch.set(doc(collection(db, "madrasas", mid, "marks")), { class: mClass, className: cName, reg: document.getElementById("markReg").value, subject: sub, mark: markToSave });
+            else batch.set(doc(collection(db, "madrasas", mid, "marks")), { class: mClass, className: cName, reg: cleanR, subject: sub, mark: markToSave });
         } else if (val === "" && docId) batch.delete(doc(db, "madrasas", mid, "marks", docId));
     });
     await batch.commit();
@@ -528,17 +590,18 @@ async function loadAttendanceForm() {
     let q = query(collection(db, "madrasas", mid, "students"), where("class","==",aClass));
     const snap = await getDocs(q);
     let students = []; snap.forEach(d => students.push(d.data()));
-    students.sort((a, b) => String(a.reg).localeCompare(String(b.reg), undefined, { numeric: true }));
+    students.sort((a, b) => cleanReg(a.reg).localeCompare(cleanReg(b.reg), undefined, { numeric: true }));
 
     const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class","==",aClass));
     const existingDocs = await getDocs(attQ);
-    let existingAtt = {}; existingDocs.forEach(d => { existingAtt[d.data().reg] = { id: d.id, val: d.data().attendance }; });
+    let existingAtt = {}; existingDocs.forEach(d => { existingAtt[cleanReg(d.data().reg)] = { id: d.id, val: d.data().attendance }; });
 
     let html = `<div class="subject-grid">`;
     students.forEach(s => {
-        let attVal = existingAtt[s.reg] ? existingAtt[s.reg].val : '';
-        let docId = existingAtt[s.reg] ? existingAtt[s.reg].id : '';
-        html += `<div class="subject-box"><label>${s.reg} - ${s.name}</label><input type="text" class="bulk-att-input" data-reg="${s.reg}" data-docid="${docId}" value="${attVal}"></div>`;
+        let cReg = cleanReg(s.reg);
+        let attVal = existingAtt[cReg] ? existingAtt[cReg].val : '';
+        let docId = existingAtt[cReg] ? existingAtt[cReg].id : '';
+        html += `<div class="subject-box"><label>${s.reg} - ${s.name}</label><input type="text" class="bulk-att-input" data-reg="${cReg}" data-docid="${docId}" value="${attVal}"></div>`;
     });
     html += `</div><button id="saveAttBtnId">Save Attendance</button>`;
     attInputsContainer.innerHTML = html;
@@ -605,16 +668,16 @@ async function downloadPDF() {
         let students = [];
         stuSnap.forEach(d => { if(d.data().resultStatus) students.push(d.data()); });
         if(students.length === 0) { showLoader(false); return alert("Please click 'Calculate Rank' first."); }
-        students.sort((a, b) => String(a.reg).localeCompare(String(b.reg), undefined, { numeric: true }));
+        students.sort((a, b) => cleanReg(a.reg).localeCompare(cleanReg(b.reg), undefined, { numeric: true }));
 
         const markQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",classId));
         const markSnap = await getDocs(markQ);
         let marksMap = {};
-        markSnap.forEach(d => { let m = d.data(); if(!marksMap[m.reg]) marksMap[m.reg] = {}; marksMap[m.reg][m.subject] = m.mark; });
+        markSnap.forEach(d => { let m = d.data(); let cReg = cleanReg(m.reg); if(!marksMap[cReg]) marksMap[cReg] = {}; marksMap[cReg][m.subject] = m.mark; });
 
         const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class","==",classId));
         const attSnap = await getDocs(attQ);
-        let attMap = {}; attSnap.forEach(d => { attMap[d.data().reg] = d.data().attendance; });
+        let attMap = {}; attSnap.forEach(d => { attMap[cleanReg(d.data().reg)] = d.data().attendance; });
 
         const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'landscape' });
         let mName = document.getElementById("mname").value || "Madrasa Report";
@@ -622,21 +685,24 @@ async function downloadPDF() {
         let fullTitle = mLoc ? `${mName}, ${mLoc}` : mName;
 
         doc.setFontSize(16); doc.text(fullTitle, 14, 15);
-        doc.setFontSize(12); doc.text(`Class: ${cNameText}  |  Pass Mark: ${globalPassMark}`, 14, 23);
+        
+        let examText = globalExamType ? `  |  Exam: ${globalExamType}` : "";
+        doc.setFontSize(12); doc.text(`Class: ${cNameText}  |  Pass Mark: ${globalPassMark}${examText}`, 14, 23);
 
         let tableHead = ['Reg No', 'Name'];
-        subjects.forEach(sub => tableHead.push(sub.substring(0, 8))); 
+        subjects.forEach(sub => tableHead.push(sub)); 
         tableHead.push('Total', 'Rank', 'Grade', 'Att.', 'Status');
 
         let tableBody = [];
         students.forEach(s => {
+            let cReg = cleanReg(s.reg);
             let row = [s.reg, s.name];
             subjects.forEach(sub => {
-                let mark = (marksMap[s.reg] && marksMap[s.reg][sub] !== undefined) ? marksMap[s.reg][sub] : '-';
+                let mark = (marksMap[cReg] && marksMap[cReg][sub] !== undefined) ? marksMap[cReg][sub] : '-';
                 row.push(mark);
             });
             row.push(s.totalMarks || 0); row.push(s.rank || '-'); row.push(s.grade || '-');
-            row.push(attMap[s.reg] || '-'); row.push(s.resultStatus || '-');
+            row.push(attMap[cReg] || '-'); row.push(s.resultStatus || '-');
             tableBody.push(row);
         });
 
@@ -681,27 +747,28 @@ async function handleStudentExcel(e) {
             const existingQ = query(collection(db, "madrasas", mid, "students"), where("class","==",cId));
             const existingSnap = await getDocs(existingQ);
             let existingStudents = {};
-            existingSnap.forEach(d => { existingStudents[String(d.data().reg).trim()] = d.id; });
+            existingSnap.forEach(d => { existingStudents[cleanReg(d.data().reg)] = d.id; });
 
             const batch = writeBatch(db);
             let count = 0;
             let updateCount = 0;
 
             for(let row of rows) {
-                let rNo = row['RegNo'] || row['regno'] || row['Reg'] || row['reg'];
+                let originalR = row['RegNo'] || row['regno'] || row['Reg'] || row['reg'];
                 let sName = row['Name'] || row['name'];
                 
-                if(rNo && sName) {
-                    rNo = String(rNo).trim();
+                if(originalR && sName) {
+                    let cReg = cleanReg(originalR);
                     sName = String(sName).trim();
+                    let displayReg = String(originalR).trim().toUpperCase(); 
                     
-                    if(existingStudents[rNo]) {
-                        let docRef = doc(db, "madrasas", mid, "students", existingStudents[rNo]);
+                    if(existingStudents[cReg]) {
+                        let docRef = doc(db, "madrasas", mid, "students", existingStudents[cReg]);
                         batch.update(docRef, { name: sName });
                         updateCount++;
                     } else {
                         let docRef = doc(collection(db, "madrasas", mid, "students"));
-                        batch.set(docRef, { class:cId, className: cName, reg: rNo, name: sName });
+                        batch.set(docRef, { class:cId, className: cName, reg: displayReg, name: sName });
                         count++;
                     }
                 }
@@ -736,34 +803,44 @@ async function handleMarksExcel(e) {
             
             const q = query(collection(db, "madrasas", mid, "subjects"), where("class","==",mClass));
             const subSnap = await getDocs(q);
-            let validSubjects = []; subSnap.forEach(d => validSubjects.push(d.data().subject.toLowerCase().trim()));
+            
+            let validSubjectsMap = {}; 
+            subSnap.forEach(d => { 
+                validSubjectsMap[cleanSub(d.data().subject)] = d.data().subject; 
+            });
 
             const existingMarksQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",mClass));
             const existingMarksSnap = await getDocs(existingMarksQ);
             let existingMarksMap = {}; 
-            existingMarksSnap.forEach(d => { let mData = d.data(); let mapKey = String(mData.reg).trim() + "_" + String(mData.subject).toLowerCase().trim(); existingMarksMap[mapKey] = d.id; });
+            existingMarksSnap.forEach(d => { 
+                let mData = d.data(); 
+                let mapKey = cleanReg(mData.reg) + "_" + cleanSub(mData.subject); 
+                existingMarksMap[mapKey] = d.id; 
+            });
 
             const batch = writeBatch(db); let count = 0;
 
             for(let row of rows) {
-                let rNo = row['RegNo'] || row['regno'] || row['Reg'] || row['reg'];
-                if(!rNo) continue; rNo = String(rNo).trim();
+                let originalR = row['RegNo'] || row['regno'] || row['Reg'] || row['reg'];
+                if(!originalR) continue; 
+                let cReg = cleanReg(originalR);
+                let displayReg = String(originalR).trim().toUpperCase();
 
                 Object.keys(row).forEach(key => {
-                    let subKey = key.toLowerCase().trim();
-                    if(validSubjects.includes(subKey)) {
+                    let subKey = cleanSub(key);
+                    if(validSubjectsMap[subKey]) {
                         let markVal = row[key];
                         if(markVal !== "" && markVal !== null && markVal !== undefined) {
                             let markToSave = isNaN(markVal) ? String(markVal).toUpperCase() : Number(markVal);
-                            let actualSubName = subSnap.docs.find(d => d.data().subject.toLowerCase().trim() === subKey).data().subject;
-                            let mapKey = rNo + "_" + subKey;
+                            let actualSubName = validSubjectsMap[subKey]; 
+                            let mapKey = cReg + "_" + subKey;
                             
                             if (existingMarksMap[mapKey]) {
                                 let docRef = doc(db, "madrasas", mid, "marks", existingMarksMap[mapKey]);
                                 batch.update(docRef, { mark: markToSave });
                             } else {
                                 let docRef = doc(collection(db, "madrasas", mid, "marks"));
-                                batch.set(docRef, { class: mClass, className: cName, reg: rNo, subject: actualSubName, mark: markToSave });
+                                batch.set(docRef, { class: mClass, className: cName, reg: displayReg, subject: actualSubName, mark: markToSave });
                             }
                             count++;
                         }
@@ -781,7 +858,6 @@ async function handleMarksExcel(e) {
     reader.readAsBinaryString(file);
 }
 
-// ==== DESK LABELS PDF GENERATION ====
 async function downloadDeskLabels() {
     const classId = document.getElementById("resClass").value;
     let sel = document.getElementById("resClass");
@@ -801,7 +877,7 @@ async function downloadDeskLabels() {
             return alert("No students found in this class.");
         }
 
-        students.sort((a, b) => String(a.reg).localeCompare(String(b.reg), undefined, { numeric: true }));
+        students.sort((a, b) => cleanReg(a.reg).localeCompare(cleanReg(b.reg), undefined, { numeric: true }));
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -811,7 +887,6 @@ async function downloadDeskLabels() {
         const gapX = 5; 
         const gapY = 8; 
 
-        // പേപ്പറിന്റെ നടുവിലായി വരുന്നതിന് കണക്കുകൂട്ടുന്ന പുതിയ കോഡ്
         const pageWidth = doc.internal.pageSize.getWidth(); 
         const totalContentWidth = (boxWidth * 3) + (gapX * 2);
         const marginX = (pageWidth - totalContentWidth) / 2; 
@@ -831,26 +906,22 @@ async function downloadDeskLabels() {
             doc.setLineWidth(0.4);
             doc.rect(x, y, boxWidth, boxHeight);
 
-            // 1. Name 
             doc.setTextColor(0, 0, 0);
             doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
             doc.text("Name:", x + 4, y + 10);
 
-            // കുട്ടിയുടെ പേര് 
             doc.setFont("helvetica", "normal");
             let nameLines = doc.splitTextToSize(s.name, boxWidth - 22);
             doc.text(nameLines, x + 18, y + 10);
 
             let nextY = y + 10 + ((nameLines.length - 1) * 5) + 9;
 
-            // 2. Class
             doc.setFont("helvetica", "bold");
             doc.text("Class:", x + 4, nextY);
             doc.setFont("helvetica", "normal");
             doc.text(cNameText, x + 18, nextY);
 
-            // 3. Reg. No
             nextY += 9;
             doc.setFont("helvetica", "bold");
             doc.text("Reg. No:", x + 4, nextY);

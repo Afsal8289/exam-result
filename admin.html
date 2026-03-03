@@ -60,7 +60,7 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
     gap: 10px;
     white-space: nowrap;
 }
-.tab-container::-webkit-scrollbar { display: none; } /* Hide scrollbar */
+.tab-container::-webkit-scrollbar { display: none; }
 .tab-btn {
     background: #f0f2f5;
     color: #444;
@@ -116,11 +116,21 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
 
     <div id="tab-settings" class="tab-content active">
         <div class="card">
-          <h3>Madrasa, Place, Passmark</h3>
+          <h3>Madrasa Settings</h3>
           <div class="row">
             <input id="mname" placeholder="Madrasa Name">
             <input id="mloc" placeholder="Location (സ്ഥലം)">
             <input id="passmark" type="number" placeholder="Global Pass Mark">
+            
+            <select id="examTypeSelect">
+                <option value="">-- Select Exam Type (Optional) --</option>
+                <option value="Quarterly Examination">Quarterly Exam (പാദവാർഷികം)</option>
+                <option value="Half Yearly Examination">Half Yearly Exam (അർദ്ധ വാർഷികം)</option>
+                <option value="Annual Examination">Annual Exam (വാർഷികം)</option>
+                <option value="Model Examination">Model Exam (മോഡൽ)</option>
+                <option value="Monthly Test">Monthly Test (മാസാന്ത പരീക്ഷ)</option>
+            </select>
+            
           </div>
           <div class="row">
             <button id="saveSettingsBtn" style="width: 100%;"><i class="fas fa-save"></i> Save Settings</button>
@@ -150,10 +160,11 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
           <h3>Subjects</h3>
           <div class="row">
             <select id="subClass" class="dynamic-class-select"></select>
-            <input id="subName" placeholder="Subject Name">
+            <input id="subName" placeholder="Subject Name (English)">
             <input id="subMax" type="number" placeholder="Max Marks">
             <button id="addSubjectBtn">Add Subject</button>
           </div>
+          <small style="color:#d9534f;">* PDF-ൽ കൃത്യമായി കാണിക്കാൻ വിഷയങ്ങളുടെ പേര് ഇംഗ്ലീഷിൽ തന്നെ നൽകുക (Ex: Quran, Fiqh).</small>
           <div class="list" id="subjectList"></div>
         </div>
     </div>
@@ -253,12 +264,10 @@ button.delete-btn { background: #ffdddd; color: #dc3545; }
             tabContents[i].style.display = "none";
             tabContents[i].classList.remove("active");
         }
-
         let tabBtns = document.getElementsByClassName("tab-btn");
         for (let i = 0; i < tabBtns.length; i++) {
             tabBtns[i].classList.remove("active");
         }
-
         document.getElementById(tabId).style.display = "block";
         document.getElementById(tabId).classList.add("active");
         evt.currentTarget.classList.add("active");
