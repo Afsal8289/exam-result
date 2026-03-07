@@ -240,7 +240,6 @@ async function loadStudents(){
   students.sort((a, b) => cleanReg(a.reg).localeCompare(cleanReg(b.reg), undefined, { numeric: true }));
 
   students.forEach(s => {
-    // Pass s.reg into delete function
     list.innerHTML += `<div class="item"><span style="font-weight:500">${s.reg} - ${s.name}</span><div class="action-btns"><button class="icon-btn edit-btn" onclick="window.editStudent('${s.id}', '${s.reg}', '${s.name}')"><i class="fas fa-pen"></i></button><button class="icon-btn delete-btn" onclick="window.delDoc('${s.id}', 'students', '${s.reg}', '${cId}')"><i class="fas fa-trash"></i></button></div></div>`;
   });
 }
@@ -278,7 +277,6 @@ async function addStudent() {
   showLoader(false);
 }
 
-// ==== പുതുക്കിയ Delete All Students ഫംഗ്ഷൻ ====
 async function deleteAllStudents() {
     let cId = document.getElementById("stuClass").value;
     if(!cId) return alert("Select a class");
@@ -287,17 +285,14 @@ async function deleteAllStudents() {
     
     const batch = writeBatch(db);
 
-    // 1. Delete Students
     const stuQ = query(collection(db, "madrasas", mid, "students"), where("class", "==", cId));
     const stuSnap = await getDocs(stuQ);
     stuSnap.docs.forEach(d => batch.delete(d.ref));
 
-    // 2. Delete Marks for this class
     const markQ = query(collection(db, "madrasas", mid, "marks"), where("class", "==", cId));
     const markSnap = await getDocs(markQ);
     markSnap.docs.forEach(d => batch.delete(d.ref));
 
-    // 3. Delete Attendance for this class
     const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class", "==", cId));
     const attSnap = await getDocs(attQ);
     attSnap.docs.forEach(d => batch.delete(d.ref));
@@ -308,7 +303,6 @@ async function deleteAllStudents() {
     alert("All students, their marks, and attendance deleted successfully.");
 }
 
-// ==== പുതുക്കിയ Single Delete ഫംഗ്ഷൻ ====
 window.delDoc = async (id, col, regNo = null, classId = null) => {
     let msg = "Are you sure you want to delete this?";
     if (col === 'students') {
@@ -319,19 +313,15 @@ window.delDoc = async (id, col, regNo = null, classId = null) => {
         showLoader(true);
         const batch = writeBatch(db);
         
-        // Delete main document
         batch.delete(doc(db, "madrasas", mid, col, id));
 
-        // If it's a student, delete their marks and attendance too
         if (col === 'students' && regNo && classId) {
             let cleanR = cleanReg(regNo);
             
-            // Delete Marks
             const markQ = query(collection(db, "madrasas", mid, "marks"), where("class", "==", classId), where("reg", "==", cleanR));
             const markSnap = await getDocs(markQ);
             markSnap.docs.forEach(d => batch.delete(d.ref));
 
-            // Delete Attendance
             const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class", "==", classId), where("reg", "==", cleanR));
             const attSnap = await getDocs(attQ);
             attSnap.docs.forEach(d => batch.delete(d.ref));
@@ -446,6 +436,7 @@ async function loadStudentMarksForm(){
     }
 }
 
+// ==== RANK CALCULATION UPDATE (ഒരേ മാർക്കുള്ളവർക്ക് ഒരേ റാങ്ക്) ====
 async function processRankCalculation(classId) {
     const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",classId));
     const stuSnap = await getDocs(stuQ);
@@ -521,11 +512,31 @@ async function processRankCalculation(classId) {
         });
     });
 
+    // ഏറ്റവും കൂടുതൽ മാർക്ക് കിട്ടിയവരെ മുകളിലേക്ക് അടുക്കുന്നു
     resultsArray.sort((a, b) => b.total - a.total);
 
+    // ഇവിടെയാണ് പുതിയ റാങ്ക് കാൽക്കുലേഷൻ (ഒരേ മാർക്കുള്ളവർക്ക് ഒരേ റാങ്ക്)
+    let currentRank = 1;
+    let previousTotal = null;
+
+    resultsArray.forEach((res) => {
+        if (res.status === "PASSED" || res.status === "PROMOTED") {
+            if (previousTotal === null) {
+                res.rank = currentRank;
+            } else if (res.total === previousTotal) {
+                res.rank = currentRank; // ഒരേ മാർക്കാണെങ്കിൽ പഴയ റാങ്ക് തന്നെ നൽകുന്നു
+            } else {
+                currentRank++; // മാർക്ക് മാറുമ്പോൾ മാത്രം റാങ്ക് നമ്പർ കൂട്ടുന്നു
+                res.rank = currentRank;
+            }
+            previousTotal = res.total;
+        } else {
+            res.rank = "-"; // ഫെയിൽ ആയവർക്ക് റാങ്ക് നൽകില്ല
+        }
+    });
+
     const batch = writeBatch(db);
-    resultsArray.forEach((res, index) => {
-        res.rank = (res.status === "PASSED" || res.status === "PROMOTED") ? index + 1 : "-"; 
+    resultsArray.forEach((res) => {
         batch.update(doc(db, "madrasas", mid, "students", res.docId), { 
             totalMarks: res.total, 
             resultStatus: res.status, 
