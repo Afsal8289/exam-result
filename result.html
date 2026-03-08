@@ -339,7 +339,6 @@ const cls = params.get("class");
 const rawReg = params.get("reg");
 
 const cleanReg = (r) => r ? String(r).replace(/\s+/g, '').toUpperCase() : "";
-const cleanSub = (s) => s ? String(s).replace(/\s+/g, '').toLowerCase() : "";
 
 const reg = cleanReg(rawReg);
 
@@ -351,6 +350,7 @@ async function loadResult(){
   }
 
   try {
+      // 1. Madrasa Info Fetch (1 Read)
       const madSnap = await getDoc(doc(db, "madrasas", mid));
       if(!madSnap.exists()){
         alert("Invalid Madrasa ID");
@@ -379,6 +379,7 @@ async function loadResult(){
           return;
       }
 
+      // 2. Student Info Fetch (1 Read)
       const stuQ = query(collection(db, "madrasas", mid, "students"), where("class","==",cls), where("reg","==",reg));
       const stuSnap = await getDocs(stuQ);
 
@@ -406,37 +407,37 @@ async function loadResult(){
       else if(statusStr === "PROMOTED") statusEl.classList.add("status-prom");
       else statusEl.classList.add("status-fail");
 
-      const attQ = query(collection(db, "madrasas", mid, "attendance"), where("class","==",cls), where("reg","==",reg));
-      const attSnap = await getDocs(attQ);
-      document.getElementById("sAtt").innerText = attSnap.empty ? "-" : attSnap.docs[0].data().attendance;
+      // --- OPTIMIZATION: Get Attendance directly from student document, NO EXTRA READS ---
+      document.getElementById("sAtt").innerText = stu.attendance || "-";
 
-      const subQ = query(collection(db, "madrasas", mid, "subjects"), where("class","==",cls));
-      const subSnap = await getDocs(subQ);
-      let subjects = [];
-      subSnap.forEach(d => subjects.push(d.data()));
-      subjects.sort((a,b)=> (a.createdAt||0) - (b.createdAt||0)); 
+      // 3. Class Info Fetch to get the subject order (1 Read)
+      const classSnap = await getDoc(doc(db, "madrasas", mid, "classes", cls));
+      let subjectsList = [];
+      if(classSnap.exists() && classSnap.data().subjectList) {
+          subjectsList = classSnap.data().subjectList;
+      } else if (stu.marksMap) {
+          subjectsList = Object.keys(stu.marksMap);
+      }
 
-      const markQ = query(collection(db, "madrasas", mid, "marks"), where("class","==",cls), where("reg","==",reg));
-      const markSnap = await getDocs(markQ);
-      let marksMap = {};
-      markSnap.forEach(d => {
-          let m = d.data();
-          marksMap[cleanSub(m.subject)] = m.mark;
-      });
-
+      // --- OPTIMIZATION: Get Marks directly from student document, NO EXTRA READS ---
       const marksTbody = document.getElementById("marks");
       marksTbody.innerHTML = "";
       
-      subjects.forEach(s => {
-          let subKey = cleanSub(s.subject);
-          let markVal = marksMap[subKey] !== undefined ? marksMap[subKey] : "-";
-          marksTbody.innerHTML += `
-            <tr>
-              <td>${s.subject}</td>
-              <td class="td-center">${markVal}</td>
-            </tr>
-          `;
-      });
+      let marksMapData = stu.marksMap || {};
+      
+      if(subjectsList.length > 0) {
+          subjectsList.forEach(sub => {
+              let markVal = marksMapData[sub] !== undefined ? marksMapData[sub] : "-";
+              marksTbody.innerHTML += `
+                <tr>
+                  <td>${sub}</td>
+                  <td class="td-center">${markVal}</td>
+                </tr>
+              `;
+          });
+      } else {
+          marksTbody.innerHTML = `<tr><td colspan="2" class="td-center">No Marks Uploaded</td></tr>`;
+      }
 
       document.getElementById("overlay").style.display = "none";
       document.getElementById("resultCard").style.display = "block";
@@ -450,27 +451,23 @@ async function loadResult(){
 
 loadResult();
 
-// Changed from PDF to Image Download
 window.downloadImage = function() {
   const element = document.getElementById("resultCard");
   const buttons = document.getElementById("actionButtons");
   const originalAnimation = element.style.animation;
 
-  // Hide buttons and animation before capturing
   buttons.classList.add("hide-for-capture");
   element.style.animation = 'none';
 
   html2canvas(element, {
-    scale: 3, // High quality for WhatsApp Status
+    scale: 3, 
     useCORS: true,
-    backgroundColor: "#ffffff", // Pure white background for corners
+    backgroundColor: "#ffffff", 
     borderRadius: 20
   }).then(canvas => {
-    // Show buttons again
     buttons.classList.remove("hide-for-capture");
     element.style.animation = originalAnimation;
 
-    // Trigger download
     const link = document.createElement('a');
     link.download = `Result_${reg}.png`;
     link.href = canvas.toDataURL('image/png');
